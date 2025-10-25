@@ -1,5 +1,7 @@
+"use client";
 import React from "react";
-import { useRouter } from "next/router";
+import { motion, AnimatePresence } from "framer-motion";
+import { Home, Users, ClipboardList, Settings, X } from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -7,58 +9,58 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
-  const router = useRouter();
-
-  const links = [
-    { name: "Dashboard", path: "/" },
-    { name: "Tenants", path: "/tenants" },
-    { name: "Maintenance", path: "/maintenance" },
-    { name: "Reports", path: "/reports" },
-    { name: "Settings", path: "/settings" },
-  ];
-
   return (
-    <>
-      {/* Overlay (mobile) */}
+    <AnimatePresence>
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-40 z-30 md:hidden"
-          onClick={toggleSidebar}
-        ></div>
-      )}
+        <>
+          {/* Overlay for mobile */}
+          <motion.div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={toggleSidebar}
+          />
 
-      {/* Sidebar */}
-      <aside
-        className={`fixed md:static top-0 left-0 h-full w-64 bg-[#C4D8E2] text-gray-900 shadow-xl flex flex-col p-5 transform transition-transform duration-300 z-40
-        ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
-      >
-        <h1
-          className="text-2xl font-bold text-[#C62828] mb-10 cursor-pointer"
-          onClick={() => router.push("/")}
-        >
-          PropMan
-        </h1>
-        <nav className="flex flex-col gap-3">
-          {links.map((link) => (
-            <button
-              key={link.name}
-              onClick={() => {
-                router.push(link.path);
-                toggleSidebar();
-              }}
-              className={`text-left px-3 py-2 rounded-lg transition ${
-                router.pathname === link.path
-                  ? "bg-[#C62828] text-white"
-                  : "hover:bg-[#C0C0C0]"
-              }`}
-            >
-              {link.name}
-            </button>
-          ))}
-        </nav>
-      </aside>
-    </>
+          {/* Sidebar itself */}
+          <motion.aside
+            initial={{ x: -280 }}
+            animate={{ x: 0 }}
+            exit={{ x: -280 }}
+            transition={{ type: "spring", stiffness: 80, damping: 15 }}
+            className="fixed left-0 top-0 z-50 h-full w-64 bg-gradient-to-b from-columbia-700 to-columbia-900 text-white shadow-2xl flex flex-col"
+          >
+            <div className="flex items-center justify-between p-4 border-b border-white/20">
+              <h2 className="text-xl font-bold tracking-wide">PropMan</h2>
+              <button onClick={toggleSidebar} className="text-gray-200 hover:text-white">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <nav className="flex-1 p-4 space-y-4">
+              <a href="#" className="flex items-center gap-3 text-lg hover:text-silver transition">
+                <Home className="w-5 h-5" /> Dashboard
+              </a>
+              <a href="#" className="flex items-center gap-3 text-lg hover:text-silver transition">
+                <Users className="w-5 h-5" /> Tenants
+              </a>
+              <a href="#" className="flex items-center gap-3 text-lg hover:text-silver transition">
+                <ClipboardList className="w-5 h-5" /> Maintenance
+              </a>
+              <a href="#" className="flex items-center gap-3 text-lg hover:text-silver transition">
+                <Settings className="w-5 h-5" /> Settings
+              </a>
+            </nav>
+
+            <footer className="p-4 text-xs text-center text-gray-400 border-t border-white/20">
+              © 2025 PropMan. All rights reserved.
+            </footer>
+          </motion.aside>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
 
 export default Sidebar;
+
