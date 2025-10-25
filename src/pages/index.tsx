@@ -1,9 +1,15 @@
+import Layout from "@/components/Layout";
+
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-columbia-blue text-red-500">
-      <h1 className="text-4xl font-bold">🚀 PropMan Tailwind Test</h1>
-      <p className="text-lg mt-4">If you see colors and spacing, Tailwind works!</p>
-    </div>
+    <Layout>
+      <div className="p-6 bg-white rounded-xl shadow text-gray-800">
+        <h1 className="text-2xl font-bold text-[#C62828] mb-3">
+          Welcome to PropMan
+        </h1>
+        <p>Manage your properties, tenants, and maintenance requests efficiently.</p>
+      </div>
+    </Layout>
   );
 }
 
