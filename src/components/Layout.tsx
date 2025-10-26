@@ -3,21 +3,20 @@ import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-gray-100 text-gray-900">
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
-      {/* Main Content */}
       <div className="flex flex-col flex-1">
-        <Topbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="p-6">{children}</main>
+        <Topbar setIsOpen={setIsOpen} onMenuClick={function (): void {
+          throw new Error("Function not implemented.");
+        } } />
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   );
-};
+}
 
-export default Layout;

@@ -4,9 +4,10 @@ import { Menu } from "lucide-react";
 
 interface TopbarProps {
   onMenuClick: () => void;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>; // Add this here
 }
 
-const Topbar: React.FC<TopbarProps> = ({ onMenuClick }) => {
+const Topbar: React.FC<TopbarProps> = ({ onMenuClick, setIsOpen }) => {
   return (
     <header className="flex items-center justify-between px-4 py-3 bg-white shadow-md">
       {/* Mobile Menu Button */}

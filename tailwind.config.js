@@ -9,8 +9,8 @@ module.exports = {
     extend: {
       colors: {
         columbia: {
-          700: "#4A90E2",
-          900: "#2C5DAA",
+          700: "#E63946",
+          900: "#4A90E2",
         },
         silver: "#C0C0C0",
         red: {

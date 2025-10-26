@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, Users, ClipboardList, Settings, X } from "lucide-react";
 
@@ -12,11 +13,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Ensures this runs only after the component is mounted (client-side)
     setIsClient(true);
   }, []);
 
-  if (!isClient) return null; // prevents SSR issues
+  if (!isClient) return null;
 
   const shouldShowSidebar = isOpen || (typeof window !== "undefined" && window.innerWidth >= 768);
 
@@ -31,7 +31,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           transition={{ duration: 0.3 }}
           className="fixed md:static left-0 top-0 z-20 w-64 h-full bg-columbia-700 text-white shadow-lg flex flex-col"
         >
-          {/* Close button (mobile only) */}
           <div className="flex justify-between items-center p-4 md:hidden">
             <h2 className="text-lg font-semibold">PropMan</h2>
             <button onClick={() => setIsOpen(false)}>
@@ -39,20 +38,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             </button>
           </div>
 
-          {/* Navigation Links */}
           <nav className="mt-4 space-y-2">
-            <a href="#" className="flex items-center px-4 py-2 hover:bg-columbia-900 transition">
+            <Link href="/" className="flex items-center px-4 py-2 hover:bg-columbia-900 transition">
               <Home className="mr-3 w-5 h-5" /> Dashboard
-            </a>
-            <a href="#" className="flex items-center px-4 py-2 hover:bg-columbia-900 transition">
+            </Link>
+            <Link href="/tenants" className="flex items-center px-4 py-2 hover:bg-columbia-900 transition">
               <Users className="mr-3 w-5 h-5" /> Tenants
-            </a>
-            <a href="#" className="flex items-center px-4 py-2 hover:bg-columbia-900 transition">
+            </Link>
+            <Link href="/tasks" className="flex items-center px-4 py-2 hover:bg-columbia-900 transition">
               <ClipboardList className="mr-3 w-5 h-5" /> Tasks
-            </a>
-            <a href="#" className="flex items-center px-4 py-2 hover:bg-columbia-900 transition">
+            </Link>
+            <Link href="/settings" className="flex items-center px-4 py-2 hover:bg-columbia-900 transition">
               <Settings className="mr-3 w-5 h-5" /> Settings
-            </a>
+            </Link>
           </nav>
         </motion.aside>
       )}
