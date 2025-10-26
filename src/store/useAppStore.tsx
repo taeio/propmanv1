@@ -1,6 +1,16 @@
 import { create } from "zustand";
 
-type Client = { id: number; name: string; email: string; leaseStatus: string };
+type Client = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  rentAmount: number;
+  moveInDate: string;
+  leaseTerm: string;
+  rentStatus: "Paid" | "Due" | "Late";
+};
+
 type Project = { id: number; name: string; client: string; status: string };
 type Note = { id: number; text: string; category: string; date: string };
 
