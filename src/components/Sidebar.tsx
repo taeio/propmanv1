@@ -1,40 +1,58 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, Users, ClipboardList, Settings, X } from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
+  setIsOpen: (isOpen: boolean) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // Ensures this runs only after the component is mounted (client-side)
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) return null; // prevents SSR issues
+
+  const shouldShowSidebar = isOpen || (typeof window !== "undefined" && window.innerWidth >= 768);
+
   return (
     <AnimatePresence>
-      {(isOpen || window.innerWidth >= 768) && (
+      {shouldShowSidebar && (
         <motion.aside
           key="sidebar"
           initial={{ x: -250 }}
           animate={{ x: 0 }}
           exit={{ x: -250 }}
-          transition={{ duration: 0.25 }}
-          className="fixed md:static inset-y-0 left-0 z-40 w-64 bg-white shadow-lg flex flex-col"
+          transition={{ duration: 0.3 }}
+          className="fixed md:static left-0 top-0 z-20 w-64 h-full bg-columbia-700 text-white shadow-lg flex flex-col"
         >
-          {/* Close button on mobile */}
-          <div className="md:hidden flex justify-end p-3">
-            <button
-              className="p-2 rounded-lg hover:bg-gray-200"
-              onClick={() => setIsOpen(false)}
-            >
-              <X className="w-5 h-5" />
+          {/* Close button (mobile only) */}
+          <div className="flex justify-between items-center p-4 md:hidden">
+            <h2 className="text-lg font-semibold">PropMan</h2>
+            <button onClick={() => setIsOpen(false)}>
+              <X className="w-6 h-6" />
             </button>
           </div>
 
-          <nav className="flex flex-col gap-2 p-4">
-            <SidebarItem icon={<Home />} label="Dashboard" />
-            <SidebarItem icon={<Users />} label="Tenants" />
-            <SidebarItem icon={<ClipboardList />} label="Maintenance" />
-            <SidebarItem icon={<Settings />} label="Settings" />
+          {/* Navigation Links */}
+          <nav className="mt-4 space-y-2">
+            <a href="#" className="flex items-center px-4 py-2 hover:bg-columbia-900 transition">
+              <Home className="mr-3 w-5 h-5" /> Dashboard
+            </a>
+            <a href="#" className="flex items-center px-4 py-2 hover:bg-columbia-900 transition">
+              <Users className="mr-3 w-5 h-5" /> Tenants
+            </a>
+            <a href="#" className="flex items-center px-4 py-2 hover:bg-columbia-900 transition">
+              <ClipboardList className="mr-3 w-5 h-5" /> Tasks
+            </a>
+            <a href="#" className="flex items-center px-4 py-2 hover:bg-columbia-900 transition">
+              <Settings className="mr-3 w-5 h-5" /> Settings
+            </a>
           </nav>
         </motion.aside>
       )}
@@ -42,12 +60,4 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   );
 };
 
-const SidebarItem = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
-  <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
-    {icon}
-    <span>{label}</span>
-  </button>
-);
-
 export default Sidebar;
-
