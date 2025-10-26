@@ -7,14 +7,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
-      <div className="flex flex-col flex-1">
-        <Topbar setIsOpen={setIsOpen} onMenuClick={function (): void {
-          throw new Error("Function not implemented.");
-        } } />
-        <main className="flex-1 p-6">{children}</main>
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col">
+        <Topbar setIsOpen={setIsOpen} />
+        <main className="p-6 mt-16 md:mt-0">{children}</main>
       </div>
     </div>
   );
