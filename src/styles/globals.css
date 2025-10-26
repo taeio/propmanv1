@@ -1,11 +1,8 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --color-brand: #C62828;
-}
-
-
+/* Global custom styles */
 body {
-  background-color: theme(color,gray.100);
-  color: theme(color,red.900);
+  @apply bg-gray-100 text-red-900;
 }
