@@ -1,5 +1,4 @@
 "use client";
-import { ReactNode } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -7,8 +6,8 @@ export type RentStatus = "Paid" | "Due" | "Late";
 export type ProjectStatus = "In Progress" | "Completed" | "Pending";
 
 export interface Client {
-  phone: ReactNode;
-  status: string;
+  rentStatus: string;
+  phone: string;
   id: number;
   firstName: string;
   lastName: string;
@@ -16,7 +15,6 @@ export interface Client {
   rentAmount: number;
   moveInDate: string;
   leaseTerm: string;
-  rentStatus: RentStatus;
 }
 
 export interface Project {
@@ -119,3 +117,4 @@ export const useAppStore = create<AppStore>()(
     }
   )
 );
+

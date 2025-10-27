@@ -24,7 +24,6 @@ export default function ClientsPage() {
     leaseTerm: "",
     rentStatus: "Due" as RentStatus,
     phone: "",
-    status: "",
   });
 
   const resetForm = () => {
@@ -37,12 +36,10 @@ export default function ClientsPage() {
       leaseTerm: "",
       rentStatus: "Due",
       phone: "",
-      status: "",
     });
     setEditingClientId(null);
   };
 
-  // Convert rentAmount number to string when setting form state
   const openEditModal = (client: any) => {
     setEditingClientId(client.id);
     setForm({
@@ -54,7 +51,6 @@ export default function ClientsPage() {
       leaseTerm: client.leaseTerm,
       rentStatus: client.rentStatus,
       phone: typeof client.phone === "string" ? client.phone : "",
-      status: typeof client.status === "string" ? client.status : "",
     });
     setModalOpen(true);
   };
@@ -67,12 +63,11 @@ export default function ClientsPage() {
       firstName: form.firstName,
       lastName: form.lastName,
       email: form.email,
-      rentAmount: Number(form.rentAmount), // Convert string to number here
+      rentAmount: Number(form.rentAmount),
       moveInDate: form.moveInDate,
       leaseTerm: form.leaseTerm,
       rentStatus: form.rentStatus,
       phone: form.phone,
-      status: form.status,
     };
 
     if (editingClientId !== null) {
@@ -232,14 +227,6 @@ export default function ClientsPage() {
                     <option value="Late">Late</option>
                   </select>
 
-                  <input
-                    type="text"
-                    placeholder="Status"
-                    value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="w-full border rounded-lg p-2"
-                  />
-
                   <div className="flex justify-end gap-2 mt-4">
                     <button
                       type="button"
@@ -267,5 +254,4 @@ export default function ClientsPage() {
     </Layout>
   );
 }
-
 
