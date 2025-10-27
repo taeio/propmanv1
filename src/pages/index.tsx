@@ -12,16 +12,15 @@ export default function DashboardPage() {
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    // Listen for Zustand persist hydration complete event
+    // Wait for Zustand persist middleware to finish hydration
     // @ts-ignore
     const unsub = useAppStore.persist.onFinishHydration(() => {
       setIsHydrated(true);
-      unsub(); // unsubscribe after hydration complete
+      unsub();
     });
   }, []);
 
   if (!isHydrated) {
-    // Show loading or placeholder while state hydrates
     return (
       <Layout>
         <div className="p-6">
@@ -48,7 +47,7 @@ export default function DashboardPage() {
           Dashboard Overview
         </motion.h1>
 
-        {/* Stat Cards retained at top */}
+        {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           <StatCard
             title="Active Projects"
@@ -72,7 +71,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* "No clients yet" message shown if no clients */}
+        {/* Show "No clients yet" card if no clients */}
         {clients.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -86,7 +85,7 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
-        {/* Recent Projects Section */}
+        {/* Recent Projects */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

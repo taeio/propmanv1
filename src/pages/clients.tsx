@@ -226,7 +226,6 @@ export default function ClientsPage() {
                     <option value="Due">Due</option>
                     <option value="Late">Late</option>
                   </select>
-
                   <div className="flex justify-end gap-2 mt-4">
                     <button
                       type="button"
