@@ -1,13 +1,11 @@
-"use client";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+// ===== Types =====
 export type RentStatus = "Paid" | "Due" | "Late";
 export type ProjectStatus = "In Progress" | "Completed" | "Pending";
 
 export interface Client {
-  rentStatus: string;
-  phone: string;
   id: number;
   firstName: string;
   lastName: string;
@@ -15,6 +13,7 @@ export interface Client {
   rentAmount: number;
   moveInDate: string;
   leaseTerm: string;
+  rentStatus: RentStatus;
 }
 
 export interface Project {
@@ -33,6 +32,7 @@ export interface Note {
   date: string;
 }
 
+// ===== Store Interface =====
 interface AppStore {
   clients: Client[];
   projects: Project[];
@@ -51,6 +51,7 @@ interface AppStore {
   deleteNote: (id: number) => void;
 }
 
+// ===== Store Implementation =====
 export const useAppStore = create<AppStore>()(
   persist(
     (set) => ({
@@ -58,6 +59,7 @@ export const useAppStore = create<AppStore>()(
       projects: [],
       notes: [],
 
+      // ----- CLIENT ACTIONS -----
       addClient: (c) =>
         set((state) => ({
           clients: [...state.clients, { id: Date.now(), ...c }],
@@ -75,6 +77,7 @@ export const useAppStore = create<AppStore>()(
           clients: state.clients.filter((client) => client.id !== id),
         })),
 
+      // ----- PROJECT ACTIONS -----
       addProject: (p) =>
         set((state) => ({
           projects: [...state.projects, { id: Date.now(), ...p }],
@@ -92,6 +95,7 @@ export const useAppStore = create<AppStore>()(
           projects: state.projects.filter((proj) => proj.id !== id),
         })),
 
+      // ----- NOTES ACTIONS -----
       addNote: (n) =>
         set((state) => ({
           notes: [
@@ -113,8 +117,23 @@ export const useAppStore = create<AppStore>()(
         })),
     }),
     {
-      name: "app-storage", // data saved to localStorage
+      name: "taeio-dashboard-storage",
+      storage: {
+        getItem: (name) => {
+          const item = localStorage.getItem(name);
+          return item ? JSON.parse(item) : null;
+        },
+        setItem: (name, value) => {
+          localStorage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: (name) => {
+          localStorage.removeItem(name);
+        },
+      },
     }
   )
 );
+
+
+
 
