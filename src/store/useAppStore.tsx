@@ -1,9 +1,14 @@
+"use client";
+import { ReactNode } from "react";
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export type RentStatus = "Paid" | "Due" | "Late";
 export type ProjectStatus = "In Progress" | "Completed" | "Pending";
 
 export interface Client {
+  phone: ReactNode;
+  status: string;
   id: number;
   firstName: string;
   lastName: string;
@@ -48,59 +53,69 @@ interface AppStore {
   deleteNote: (id: number) => void;
 }
 
-export const useAppStore = create<AppStore>((set) => ({
-  clients: [],
-  projects: [],
-  notes: [],
+export const useAppStore = create<AppStore>()(
+  persist(
+    (set) => ({
+      clients: [],
+      projects: [],
+      notes: [],
 
-  addClient: (c) =>
-    set((state) => ({
-      clients: [...state.clients, { id: Date.now(), ...c }],
-    })),
+      addClient: (c) =>
+        set((state) => ({
+          clients: [...state.clients, { id: Date.now(), ...c }],
+        })),
 
-  updateClient: (id, updated) =>
-    set((state) => ({
-      clients: state.clients.map((client) =>
-        client.id === id ? { id, ...updated } : client
-      ),
-    })),
+      updateClient: (id, updated) =>
+        set((state) => ({
+          clients: state.clients.map((client) =>
+            client.id === id ? { id, ...updated } : client
+          ),
+        })),
 
-  deleteClient: (id) =>
-    set((state) => ({
-      clients: state.clients.filter((client) => client.id !== id),
-    })),
+      deleteClient: (id) =>
+        set((state) => ({
+          clients: state.clients.filter((client) => client.id !== id),
+        })),
 
-  addProject: (p) =>
-    set((state) => ({
-      projects: [...state.projects, { id: Date.now(), ...p }],
-    })),
+      addProject: (p) =>
+        set((state) => ({
+          projects: [...state.projects, { id: Date.now(), ...p }],
+        })),
 
-  updateProject: (id, updated) =>
-    set((state) => ({
-      projects: state.projects.map((proj) =>
-        proj.id === id ? { id, ...updated } : proj
-      ),
-    })),
+      updateProject: (id, updated) =>
+        set((state) => ({
+          projects: state.projects.map((proj) =>
+            proj.id === id ? { id, ...updated } : proj
+          ),
+        })),
 
-  deleteProject: (id) =>
-    set((state) => ({
-      projects: state.projects.filter((proj) => proj.id !== id),
-    })),
+      deleteProject: (id) =>
+        set((state) => ({
+          projects: state.projects.filter((proj) => proj.id !== id),
+        })),
 
-  addNote: (n) =>
-    set((state) => ({
-      notes: [...state.notes, { id: Date.now(), date: new Date().toLocaleString(), ...n }],
-    })),
+      addNote: (n) =>
+        set((state) => ({
+          notes: [
+            ...state.notes,
+            { id: Date.now(), date: new Date().toLocaleString(), ...n },
+          ],
+        })),
 
-  updateNote: (id, updated) =>
-    set((state) => ({
-      notes: state.notes.map((note) =>
-        note.id === id ? { ...note, ...updated } : note
-      ),
-    })),
+      updateNote: (id, updated) =>
+        set((state) => ({
+          notes: state.notes.map((note) =>
+            note.id === id ? { ...note, ...updated } : note
+          ),
+        })),
 
-  deleteNote: (id) =>
-    set((state) => ({
-      notes: state.notes.filter((note) => note.id !== id),
-    })),
-}));
+      deleteNote: (id) =>
+        set((state) => ({
+          notes: state.notes.filter((note) => note.id !== id),
+        })),
+    }),
+    {
+      name: "app-storage", // data saved to localStorage
+    }
+  )
+);

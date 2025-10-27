@@ -10,7 +10,7 @@ module.exports = {
       colors: {
         columbia: {
           700: "#E63946",
-          900: "#4A90E2",
+          900: "#e24a4aff",
         },
         silver: "#C0C0C0",
         red: {
