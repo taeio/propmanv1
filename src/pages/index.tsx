@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Briefcase, Users, DollarSign, ClipboardList } from "lucide-react";
 import { motion } from "framer-motion";
@@ -8,6 +8,28 @@ import { useAppStore } from "@/store/useAppStore";
 export default function DashboardPage() {
   const projects = useAppStore((state) => state.projects);
   const clients = useAppStore((state) => state.clients);
+
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    // Listen for Zustand persist hydration complete event
+    // @ts-ignore
+    const unsub = useAppStore.persist.onFinishHydration(() => {
+      setIsHydrated(true);
+      unsub(); // unsubscribe after hydration complete
+    });
+  }, []);
+
+  if (!isHydrated) {
+    // Show loading or placeholder while state hydrates
+    return (
+      <Layout>
+        <div className="p-6">
+          <p className="text-gray-500">Loading dashboard...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   const totalPaid = projects.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
   const activeProjects = projects.filter((p) => p.status === "In Progress").length;
@@ -26,7 +48,7 @@ export default function DashboardPage() {
           Dashboard Overview
         </motion.h1>
 
-        {/* Stat Cards stay at top as before */}
+        {/* Stat Cards retained at top */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           <StatCard
             title="Active Projects"
@@ -50,7 +72,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Show "No clients yet" card only if clients is empty, above projects */}
+        {/* "No clients yet" message shown if no clients */}
         {clients.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -64,7 +86,7 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
-        {/* Recent Projects */}
+        {/* Recent Projects Section */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -147,6 +169,7 @@ function StatCard({
     </motion.div>
   );
 }
+
 
 
 
