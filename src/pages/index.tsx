@@ -26,8 +26,32 @@ export default function DashboardPage() {
           Dashboard Overview
         </motion.h1>
 
-        {/* Show "No clients yet" card if no clients, else show stat cards */}
-        {clients.length === 0 ? (
+        {/* Stat Cards stay at top as before */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+          <StatCard
+            title="Active Projects"
+            value={activeProjects}
+            icon={<Briefcase className="w-5 h-5 text-columbia-700" />}
+          />
+          <StatCard
+            title="Completed Projects"
+            value={completedProjects}
+            icon={<ClipboardList className="w-5 h-5 text-columbia-700" />}
+          />
+          <StatCard
+            title="Clients"
+            value={clients.length}
+            icon={<Users className="w-5 h-5 text-columbia-700" />}
+          />
+          <StatCard
+            title="Total Paid"
+            value={`$${totalPaid.toLocaleString()}`}
+            icon={<DollarSign className="w-5 h-5 text-columbia-700" />}
+          />
+        </div>
+
+        {/* Show "No clients yet" card only if clients is empty, above projects */}
+        {clients.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -38,29 +62,6 @@ export default function DashboardPage() {
               No clients yet — add one from the Clients tab.
             </p>
           </motion.div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-            <StatCard
-              title="Active Projects"
-              value={activeProjects}
-              icon={<Briefcase className="w-5 h-5 text-columbia-700" />}
-            />
-            <StatCard
-              title="Completed Projects"
-              value={completedProjects}
-              icon={<ClipboardList className="w-5 h-5 text-columbia-700" />}
-            />
-            <StatCard
-              title="Clients"
-              value={clients.length}
-              icon={<Users className="w-5 h-5 text-columbia-700" />}
-            />
-            <StatCard
-              title="Total Paid"
-              value={`$${totalPaid.toLocaleString()}`}
-              icon={<DollarSign className="w-5 h-5 text-columbia-700" />}
-            />
-          </div>
         )}
 
         {/* Recent Projects */}
@@ -75,9 +76,7 @@ export default function DashboardPage() {
           </h2>
 
           {projects.length === 0 ? (
-            <p className="text-gray-500 text-sm">
-              No projects yet — add one from the Projects tab.
-            </p>
+            <p className="text-gray-500 text-sm">No projects yet — add one from the Projects tab.</p>
           ) : (
             <table className="min-w-full text-sm text-gray-700">
               <thead>
