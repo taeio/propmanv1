@@ -1,138 +1,127 @@
+// /store/useAppStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-// ===== Types =====
-export type RentStatus = "Paid" | "Due" | "Late";
-export type ProjectStatus = "In Progress" | "Completed" | "Pending";
-
-export interface Client {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  rentAmount: number;
-  moveInDate: string;
-  leaseTerm: string;
-  rentStatus: RentStatus;
-}
-
-export interface Project {
+type Project = {
   id: number;
   name: string;
-  externalClient: string; // e.g. Plumbing, Landscaping
+  externalClient: string;
   budget: number;
   amountPaid: number;
-  status: ProjectStatus;
-}
+  status: "In Progress" | "Completed" | "Pending";
+};
 
-export interface Note {
+type Client = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+};
+
+type Note = {
   id: number;
   text: string;
   category: "client" | "project" | "finance" | "maintenance";
-  date: string;
-}
+};
 
-// ===== Store Interface =====
-interface AppStore {
-  clients: Client[];
+type AppStore = {
   projects: Project[];
+  clients: Client[];
   notes: Note[];
 
-  addClient: (c: Omit<Client, "id">) => void;
-  updateClient: (id: number, updated: Omit<Client, "id">) => void;
-  deleteClient: (id: number) => void;
-
-  addProject: (p: Omit<Project, "id">) => void;
-  updateProject: (id: number, updated: Omit<Project, "id">) => void;
+  // Projects
+  addProject: (data: Omit<Project, "id">) => void;
+  updateProject: (id: number, data: Partial<Project>) => void;
   deleteProject: (id: number) => void;
 
-  addNote: (n: Omit<Note, "id" | "date">) => void;
-  updateNote: (id: number, updated: Omit<Note, "id" | "date">) => void;
-  deleteNote: (id: number) => void;
-}
+  // Clients
+  addClient: (data: Omit<Client, "id">) => void;
+  updateClient: (id: number, data: Partial<Client>) => void;
+  deleteClient: (id: number) => void;
 
-// ===== Store Implementation =====
+  // Notes
+  addNote: (data: Omit<Note, "id">) => void;
+  updateNote: (id: number, data: Partial<Note>) => void;
+  deleteNote: (id: number) => void;
+};
+
 export const useAppStore = create<AppStore>()(
   persist(
     (set) => ({
-      clients: [],
       projects: [],
+      clients: [],
       notes: [],
 
-      // ----- CLIENT ACTIONS -----
-      addClient: (c) =>
+      // --- Projects ---
+      addProject: (data) =>
         set((state) => ({
-          clients: [...state.clients, { id: Date.now(), ...c }],
+          projects: [...state.projects, { id: Date.now(), ...data }],
         })),
-
-      updateClient: (id, updated) =>
+      updateProject: (id, data) =>
         set((state) => ({
-          clients: state.clients.map((client) =>
-            client.id === id ? { id, ...updated } : client
+          projects: state.projects.map((p) =>
+            p.id === id ? { ...p, ...data } : p
           ),
         })),
-
-      deleteClient: (id) =>
-        set((state) => ({
-          clients: state.clients.filter((client) => client.id !== id),
-        })),
-
-      // ----- PROJECT ACTIONS -----
-      addProject: (p) =>
-        set((state) => ({
-          projects: [...state.projects, { id: Date.now(), ...p }],
-        })),
-
-      updateProject: (id, updated) =>
-        set((state) => ({
-          projects: state.projects.map((proj) =>
-            proj.id === id ? { id, ...updated } : proj
-          ),
-        })),
-
       deleteProject: (id) =>
         set((state) => ({
-          projects: state.projects.filter((proj) => proj.id !== id),
+          projects: state.projects.filter((p) => p.id !== id),
         })),
 
-      // ----- NOTES ACTIONS -----
-      addNote: (n) =>
+      // --- Clients ---
+      addClient: (data) =>
         set((state) => ({
-          notes: [
-            ...state.notes,
-            { id: Date.now(), date: new Date().toLocaleString(), ...n },
-          ],
+          clients: [...state.clients, { id: Date.now(), ...data }],
         })),
-
-      updateNote: (id, updated) =>
+      updateClient: (id, data) =>
         set((state) => ({
-          notes: state.notes.map((note) =>
-            note.id === id ? { ...note, ...updated } : note
+          clients: state.clients.map((c) =>
+            c.id === id ? { ...c, ...data } : c
           ),
         })),
+      deleteClient: (id) =>
+        set((state) => ({
+          clients: state.clients.filter((c) => c.id !== id),
+        })),
 
+      // --- Notes ---
+      addNote: (data) =>
+        set((state) => ({
+          notes: [...state.notes, { id: Date.now(), ...data }],
+        })),
+      updateNote: (id, data) =>
+        set((state) => ({
+          notes: state.notes.map((n) =>
+            n.id === id ? { ...n, ...data } : n
+          ),
+        })),
       deleteNote: (id) =>
         set((state) => ({
-          notes: state.notes.filter((note) => note.id !== id),
+          notes: state.notes.filter((n) => n.id !== id),
         })),
     }),
     {
       name: "taeio-dashboard-storage",
       storage: {
         getItem: (name) => {
+          if (typeof window === "undefined") return null;
           const item = localStorage.getItem(name);
           return item ? JSON.parse(item) : null;
         },
         setItem: (name, value) => {
+          if (typeof window === "undefined") return;
           localStorage.setItem(name, JSON.stringify(value));
         },
         removeItem: (name) => {
+          if (typeof window === "undefined") return;
           localStorage.removeItem(name);
         },
       },
     }
   )
 );
+
 
 
 
