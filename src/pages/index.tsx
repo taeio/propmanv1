@@ -6,12 +6,12 @@ import { motion } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
 
 export default function DashboardPage() {
-  const projects = useAppStore(state => state.projects);
-  const clients = useAppStore(state => state.clients);
+  const projects = useAppStore((state) => state.projects);
+  const clients = useAppStore((state) => state.clients);
 
   const totalPaid = projects.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
-  const activeProjects = projects.filter(p => p.status === "In Progress").length;
-  const completedProjects = projects.filter(p => p.status === "Completed").length;
+  const activeProjects = projects.filter((p) => p.status === "In Progress").length;
+  const completedProjects = projects.filter((p) => p.status === "Completed").length;
 
   return (
     <Layout>
@@ -28,10 +28,26 @@ export default function DashboardPage() {
 
         {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-          <StatCard title="Active Projects" value={activeProjects} icon={<Briefcase className="w-5 h-5 text-columbia-700" />} />
-          <StatCard title="Completed Projects" value={completedProjects} icon={<ClipboardList className="w-5 h-5 text-columbia-700" />} />
-          <StatCard title="Clients" value={clients.length} icon={<Users className="w-5 h-5 text-columbia-700" />} />
-          <StatCard title="Total Paid" value={`$${totalPaid.toLocaleString()}`} icon={<DollarSign className="w-5 h-5 text-columbia-700" />} />
+          <StatCard
+            title="Active Projects"
+            value={activeProjects}
+            icon={<Briefcase className="w-5 h-5 text-columbia-700" />}
+          />
+          <StatCard
+            title="Completed Projects"
+            value={completedProjects}
+            icon={<ClipboardList className="w-5 h-5 text-columbia-700" />}
+          />
+          <StatCard
+            title="Clients"
+            value={clients.length}
+            icon={<Users className="w-5 h-5 text-columbia-700" />}
+          />
+          <StatCard
+            title="Total Paid"
+            value={`$${totalPaid.toLocaleString()}`}
+            icon={<DollarSign className="w-5 h-5 text-columbia-700" />}
+          />
         </div>
 
         {/* Recent Projects */}
@@ -62,7 +78,10 @@ export default function DashboardPage() {
                   .slice(-3)
                   .reverse()
                   .map((project) => (
-                    <tr key={project.id} className="border-b last:border-none hover:bg-gray-50 transition">
+                    <tr
+                      key={project.id}
+                      className="border-b last:border-none hover:bg-gray-50 transition"
+                    >
                       <td className="py-2">{project.name}</td>
                       <td className="py-2">{project.externalClient}</td>
                       <td className="py-2">
@@ -78,7 +97,7 @@ export default function DashboardPage() {
                           {project.status}
                         </span>
                       </td>
-                      <td className="py-2">${project.amountPaid}</td>
+                      <td className="py-2">${project.amountPaid.toLocaleString()}</td>
                     </tr>
                   ))}
               </tbody>
@@ -90,7 +109,15 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ title, value, icon }: { title: string; value: number | string; icon: React.ReactNode }) {
+function StatCard({
+  title,
+  value,
+  icon,
+}: {
+  title: string;
+  value: number | string;
+  icon: React.ReactNode;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -106,6 +133,7 @@ function StatCard({ title, value, icon }: { title: string; value: number | strin
     </motion.div>
   );
 }
+
 
 
 
