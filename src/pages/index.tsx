@@ -12,12 +12,22 @@ export default function DashboardPage() {
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    // Wait for Zustand persist middleware to finish hydration
-    // @ts-ignore
-    const unsub = useAppStore.persist.onFinishHydration(() => {
-      setIsHydrated(true);
-      unsub();
-    });
+    // Hydrate Zustand manually (since custom storage disables persist.onFinishHydration)
+    const storedData = localStorage.getItem("taeio-dashboard-storage");
+
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData).state;
+        if (parsed) {
+          useAppStore.setState(parsed, true);
+        }
+      } catch (err) {
+        console.error("Failed to load persisted state:", err);
+      }
+    }
+
+    // Give hydration a small delay to avoid flicker
+    setTimeout(() => setIsHydrated(true), 200);
   }, []);
 
   if (!isHydrated) {
@@ -71,7 +81,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Show "No clients yet" card if no clients */}
+        {/* No Clients Yet */}
         {clients.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -97,7 +107,9 @@ export default function DashboardPage() {
           </h2>
 
           {projects.length === 0 ? (
-            <p className="text-gray-500 text-sm">No projects yet — add one from the Projects tab.</p>
+            <p className="text-gray-500 text-sm">
+              No projects yet — add one from the Projects tab.
+            </p>
           ) : (
             <table className="min-w-full text-sm text-gray-700">
               <thead>
