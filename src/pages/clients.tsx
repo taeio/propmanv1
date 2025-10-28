@@ -6,10 +6,10 @@ import Layout from "@/components/Layout";
 import { useAppStore } from "@/store/useAppStore";
 
 export default function ClientsPage() {
-  const clients = useAppStore((state) => state.clients);
-  const addClient = useAppStore((state) => state.addClient);
-  const updateClient = useAppStore((state) => state.updateClient);
-  const deleteClient = useAppStore((state) => state.deleteClient);
+  const clients = useAppStore((state: { clients: any; }) => state.clients);
+  const addClient = useAppStore((state: { addClient: any; }) => state.addClient);
+  const updateClient = useAppStore((state: { updateClient: any; }) => state.updateClient);
+  const deleteClient = useAppStore((state: { deleteClient: any; }) => state.deleteClient);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClientId, setEditingClientId] = useState<number | null>(null);
@@ -76,7 +76,7 @@ export default function ClientsPage() {
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {clients.map((client) => (
+            {clients.map((client: { id: React.Key | null | undefined; name: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; email: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; phone: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; address: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }) => (
               <motion.div
                 key={client.id}
                 initial={{ opacity: 0, y: 20 }}
