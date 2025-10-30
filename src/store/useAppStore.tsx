@@ -1,3 +1,4 @@
+// /store/useAppStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -10,6 +11,7 @@ type Project = {
   status: "In Progress" | "Completed" | "Pending";
 };
 
+// ✅ CLIENT TYPE
 type Client = {
   id: number;
   firstName: string;
@@ -128,14 +130,15 @@ export const useAppStore = create<AppStore>()(
           localStorage.removeItem(name);
         },
       },
-      // Preserve actions during hydration by merging initial state with persisted state
+      // Here is the added merge function to prevent actions from being lost on hydration
       merge: (persistedState, currentState) => ({
         ...currentState,
-        ...(persistedState as object),
+        ...(persistedState ?? {}),
       }),
     }
   )
 );
+
 
 
 
