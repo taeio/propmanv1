@@ -75,14 +75,17 @@ export default function DashboardPage() {
         </div>
 
         {/* Tenants Table */}
-        <div className="bg-white shadow rounded-xl p-6 border border-gray-200">
-          <h2 className="text-lg font-semibold mb-4">Current Tenants</h2>
-          {clients.length === 0 ? (
-            <p className="text-gray-500">
-              No tenants yet — add one from the <span className="font-semibold">Clients</span> tab.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
+         <div className="bg-white shadow rounded-xl p-6 border border-gray-200">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+           <Users className="w-5 h-5 text-blue-600" />
+            Current Tenants
+          </h2>
+  {clients.length === 0 ? (
+    <p className="text-gray-500">
+      No tenants yet — add one from the <span className="font-semibold">Clients</span> tab.
+    </p>
+  ) : (
+    <div className="overflow-x-auto">
               <table className="min-w-full border-collapse text-sm">
                 <thead>
                   <tr className="bg-gray-100 text-left">
