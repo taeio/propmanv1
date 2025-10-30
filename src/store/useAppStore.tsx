@@ -1,5 +1,4 @@
 // /store/useAppStore.ts
-// /store/useAppStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -12,7 +11,7 @@ type Project = {
   status: "In Progress" | "Completed" | "Pending";
 };
 
-// ✅ UPDATED CLIENT TYPE
+// ✅ CLIENT TYPE
 type Client = {
   id: number;
   firstName: string;
@@ -33,17 +32,17 @@ type AppStore = {
   clients: Client[];
   notes: Note[];
 
-  // Projects
+  // --- Projects ---
   addProject: (data: Omit<Project, "id">) => void;
   updateProject: (id: number, data: Partial<Project>) => void;
   deleteProject: (id: number) => void;
 
-  // ✅ CLIENTS
+  // --- Clients ---
   addClient: (data: Omit<Client, "id">) => void;
   updateClient: (id: number, data: Partial<Client>) => void;
   deleteClient: (id: number) => void;
 
-  // Notes
+  // --- Notes ---
   addNote: (data: Omit<Note, "id">) => void;
   updateNote: (id: number, data: Partial<Note>) => void;
   deleteNote: (id: number) => void;
@@ -72,10 +71,20 @@ export const useAppStore = create<AppStore>()(
           projects: state.projects.filter((p) => p.id !== id),
         })),
 
-      // ✅ --- Clients (Tenants) ---
+      // --- Clients (Tenants) ---
       addClient: (data) =>
         set((state) => ({
-          clients: [...state.clients, { id: Date.now(), ...data }],
+          clients: [
+            ...state.clients,
+            {
+              id: Date.now(),
+              firstName: data.firstName,
+              lastName: data.lastName,
+              unitNumber: data.unitNumber,
+              rentAmount: data.rentAmount,
+              status: data.status,
+            },
+          ],
         })),
       updateClient: (id, data) =>
         set((state) => ({
@@ -124,6 +133,7 @@ export const useAppStore = create<AppStore>()(
     }
   )
 );
+
 
 
 
