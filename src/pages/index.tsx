@@ -9,24 +9,18 @@ export default function DashboardPage() {
   const projects = useAppStore((state) => state.projects);
   const clients = useAppStore((state) => state.clients);
 
- const [isHydrated, setIsHydrated] = useState(false);
+  // Add hydration state
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const storedData = localStorage.getItem("taeio-dashboard-storage");
-    if (storedData) {
-      try {
-        const parsed = JSON.parse(storedData).state;
-        if (parsed) {
-          useAppStore.setState(parsed, true);
-        }
-      } catch (err) {
-        console.error("Failed to load persisted state:", err);
-      }
-    }
-    setTimeout(() => setIsHydrated(true), 200); // Prevent flicker
+    // @ts-ignore Zustand persist onFinishHydration event
+    const unsub = useAppStore.persist.onFinishHydration(() => {
+      setHydrated(true);
+      unsub();
+    });
   }, []);
 
-  if (!isHydrated) {
+  if (!hydrated) {
     return (
       <Layout>
         <div className="p-6">
@@ -75,17 +69,17 @@ export default function DashboardPage() {
         </div>
 
         {/* Tenants Table */}
-         <div className="bg-white shadow rounded-xl p-6 border border-gray-200">
+        <div className="bg-white shadow rounded-xl p-6 border border-gray-200">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-           <Users className="w-5 h-5 text-blue-600" />
+            <Users className="w-5 h-5 text-blue-600" />
             Current Tenants
           </h2>
-  {clients.length === 0 ? (
-    <p className="text-gray-500">
-      No tenants yet — add one from the <span className="font-semibold">Clients</span> tab.
-    </p>
-  ) : (
-    <div className="overflow-x-auto">
+          {clients.length === 0 ? (
+            <p className="text-gray-500">
+              No tenants yet — add one from the <span className="font-semibold">Clients</span> tab.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
               <table className="min-w-full border-collapse text-sm">
                 <thead>
                   <tr className="bg-gray-100 text-left">
@@ -182,7 +176,6 @@ export default function DashboardPage() {
   );
 }
 
-// Stat card component unchanged
 function StatCard({
   title,
   value,
@@ -207,3 +200,4 @@ function StatCard({
     </motion.div>
   );
 }
+
