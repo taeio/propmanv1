@@ -9,21 +9,15 @@ export default function DashboardPage() {
   const projects = useAppStore((state) => state.projects);
   const clients = useAppStore((state) => state.clients);
 
-  const [isHydrated, setIsHydrated] = useState(false);
+ const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    const storedData = localStorage.getItem("taeio-dashboard-storage");
-    if (storedData) {
-      try {
-        const parsed = JSON.parse(storedData).state;
-        if (parsed) {
-          useAppStore.setState(parsed, true);
-        }
-      } catch (err) {
-        console.error("Failed to load persisted state:", err);
-      }
-    }
-    setTimeout(() => setIsHydrated(true), 200); // Prevent flicker
+    // Wait for Zustand persist hydration to complete
+    // @ts-ignore
+    const unsub = useAppStore.persist.onFinishHydration(() => {
+      setIsHydrated(true);
+      unsub();
+    });
   }, []);
 
   if (!isHydrated) {
