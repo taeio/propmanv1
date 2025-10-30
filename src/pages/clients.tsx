@@ -6,46 +6,55 @@ import Layout from "@/components/Layout";
 import { useAppStore } from "@/store/useAppStore";
 
 export default function ClientsPage() {
-  const clients = useAppStore((state: { clients: any; }) => state.clients);
-  const addClient = useAppStore((state: { addClient: any; }) => state.addClient);
-  const updateClient = useAppStore((state: { updateClient: any; }) => state.updateClient);
-  const deleteClient = useAppStore((state: { deleteClient: any; }) => state.deleteClient);
+  const clients = useAppStore((state) => state.clients);
+  const addClient = useAppStore((state) => state.addClient);
+  const updateClient = useAppStore((state) => state.updateClient);
+  const deleteClient = useAppStore((state) => state.deleteClient);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClientId, setEditingClientId] = useState<number | null>(null);
 
   const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
+    firstName: "",
+    lastName: "",
+    unitNumber: "",
+    rentAmount: "",
+    status: "Due",
   });
 
   const resetForm = () => {
-    setForm({ name: "", email: "", phone: "", address: "" });
+    setForm({
+      firstName: "",
+      lastName: "",
+      unitNumber: "",
+      rentAmount: "",
+      status: "Due",
+    });
     setEditingClientId(null);
   };
 
   const openEditModal = (client: any) => {
     setEditingClientId(client.id);
     setForm({
-      name: client.name,
-      email: client.email,
-      phone: client.phone,
-      address: client.address,
+      firstName: client.firstName,
+      lastName: client.lastName,
+      unitNumber: client.unitNumber,
+      rentAmount: client.rentAmount.toString(),
+      status: client.status,
     });
     setModalOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email) return;
+    if (!form.firstName || !form.lastName) return;
 
     const data = {
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      address: form.address,
+      firstName: form.firstName,
+      lastName: form.lastName,
+      unitNumber: form.unitNumber,
+      rentAmount: parseFloat(form.rentAmount),
+      status: form.status as "Paid" | "Late" | "Due",
     };
 
     if (editingClientId !== null) updateClient(editingClientId, data);
@@ -58,6 +67,7 @@ export default function ClientsPage() {
   return (
     <Layout>
       <div className="p-6">
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold flex items-center gap-2">
             <Users className="w-6 h-6 text-blue-600" /> Tenants
@@ -70,23 +80,38 @@ export default function ClientsPage() {
           </button>
         </div>
 
+        {/* Client List */}
         {clients.length === 0 ? (
-          <p className="text-gray-500">
-            No tenants yet — add one above!
-          </p>
+          <p className="text-gray-500">No tenants yet — add one above!</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {clients.map((client: { id: React.Key | null | undefined; name: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; email: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; phone: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; address: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }) => (
+            {clients.map((client) => (
               <motion.div
                 key={client.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white rounded-xl shadow p-4 border border-gray-200"
               >
-                <h3 className="text-lg font-bold">{client.name}</h3>
-                <p className="text-sm text-gray-600">📧 {client.email}</p>
-                <p className="text-sm text-gray-600">📞 {client.phone}</p>
-                <p className="text-sm text-gray-600">🏠 {client.address}</p>
+                <h3 className="text-lg font-bold">
+                  {client.firstName} {client.lastName}
+                </h3>
+                <p className="text-sm text-gray-600">🏠 Unit: {client.unitNumber}</p>
+                <p className="text-sm text-gray-600">
+                  💰 Rent: ${client.rentAmount?.toLocaleString()}
+                </p>
+                <p
+                  className={`text-sm font-semibold mt-1 ${
+                    client.status === "Paid"
+                      ? "text-green-600"
+                      : client.status === "Late"
+                      ? "text-red-600"
+                      : "text-yellow-600"
+                  }`}
+                >
+                  {client.status}
+                </p>
+
+                {/* Buttons */}
                 <div className="flex justify-end gap-2 mt-3">
                   <button
                     onClick={() => openEditModal(client)}
@@ -126,38 +151,60 @@ export default function ClientsPage() {
                 {editingClientId ? "Edit Tenant" : "New Tenant"}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="First Name"
+                    value={form.firstName}
+                    onChange={(e) =>
+                      setForm({ ...form, firstName: e.target.value })
+                    }
+                    className="w-1/2 border rounded-lg p-2"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Last Name"
+                    value={form.lastName}
+                    onChange={(e) =>
+                      setForm({ ...form, lastName: e.target.value })
+                    }
+                    className="w-1/2 border rounded-lg p-2"
+                    required
+                  />
+                </div>
+
                 <input
                   type="text"
-                  placeholder="Full Name"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
-                <input
-                  type="tel"
-                  placeholder="Phone"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full border rounded-lg p-2"
-                />
-                <input
-                  type="text"
-                  placeholder="Address"
-                  value={form.address}
+                  placeholder="Unit #"
+                  value={form.unitNumber}
                   onChange={(e) =>
-                    setForm({ ...form, address: e.target.value })
+                    setForm({ ...form, unitNumber: e.target.value })
                   }
                   className="w-full border rounded-lg p-2"
                 />
+
+                <input
+                  type="number"
+                  placeholder="Rent Amount"
+                  value={form.rentAmount}
+                  onChange={(e) =>
+                    setForm({ ...form, rentAmount: e.target.value })
+                  }
+                  className="w-full border rounded-lg p-2"
+                />
+
+                <select
+                  value={form.status}
+                  onChange={(e) =>
+                    setForm({ ...form, status: e.target.value })
+                  }
+                  className="w-full border rounded-lg p-2"
+                >
+                  <option value="Paid">Paid</option>
+                  <option value="Late">Late</option>
+                  <option value="Due">Due</option>
+                </select>
 
                 <div className="flex justify-end gap-2 mt-4">
                   <button
@@ -185,6 +232,7 @@ export default function ClientsPage() {
     </Layout>
   );
 }
+
 
 
 
