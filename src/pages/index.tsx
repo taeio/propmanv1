@@ -9,18 +9,28 @@ export default function DashboardPage() {
   const projects = useAppStore((state) => state.projects);
   const clients = useAppStore((state) => state.clients);
 
-  // Add hydration state
-  const [hydrated, setHydrated] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    // @ts-ignore Zustand persist onFinishHydration event
-    const unsub = useAppStore.persist.onFinishHydration(() => {
-      setHydrated(true);
-      unsub();
-    });
+    // Hydrate Zustand manually (since custom storage disables persist.onFinishHydration)
+    const storedData = localStorage.getItem("taeio-dashboard-storage");
+
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData).state;
+        if (parsed) {
+          useAppStore.setState(parsed, true);
+        }
+      } catch (err) {
+        console.error("Failed to load persisted state:", err);
+      }
+    }
+
+    // Give hydration a small delay to avoid flicker
+    setTimeout(() => setIsHydrated(true), 200);
   }, []);
 
-  if (!hydrated) {
+  if (!isHydrated) {
     return (
       <Layout>
         <div className="p-6">
@@ -37,12 +47,15 @@ export default function DashboardPage() {
   return (
     <Layout>
       <div className="p-6 space-y-8">
-        {/* Overview Header */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-600" /> Dashboard Overview
-          </h1>
-        </div>
+        {/* Header */}
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="text-3xl font-bold text-gray-800"
+        >
+          Dashboard Overview
+        </motion.h1>
 
         {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -68,53 +81,19 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Tenants Table */}
-        <div className="bg-white shadow rounded-xl p-6 border border-gray-200">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" />
-            Current Tenants
-          </h2>
-          {clients.length === 0 ? (
-            <p className="text-gray-500">
-              No tenants yet — add one from the <span className="font-semibold">Clients</span> tab.
+        {/* No Clients Yet */}
+        {clients.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
+          >
+            <p className="text-gray-500 text-center text-lg">
+              No clients yet — add one from the Clients tab.
             </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse text-sm">
-                <thead>
-                  <tr className="bg-gray-100 text-left">
-                    <th className="py-2 px-4 border-b">First Name</th>
-                    <th className="py-2 px-4 border-b">Last Name</th>
-                    <th className="py-2 px-4 border-b">Unit #</th>
-                    <th className="py-2 px-4 border-b">Rent ($)</th>
-                    <th className="py-2 px-4 border-b">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {clients.map((client) => (
-                    <tr key={client.id} className="hover:bg-gray-50">
-                      <td className="py-2 px-4 border-b">{client.firstName}</td>
-                      <td className="py-2 px-4 border-b">{client.lastName}</td>
-                      <td className="py-2 px-4 border-b">{client.unitNumber}</td>
-                      <td className="py-2 px-4 border-b">{client.rentAmount}</td>
-                      <td
-                        className={`py-2 px-4 border-b font-semibold ${
-                          client.status === "Paid"
-                            ? "text-green-600"
-                            : client.status === "Late"
-                            ? "text-red-600"
-                            : "text-yellow-600"
-                        }`}
-                      >
-                        {client.status}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+          </motion.div>
+        )}
 
         {/* Recent Projects */}
         <motion.div
@@ -126,6 +105,7 @@ export default function DashboardPage() {
           <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
             <Briefcase className="w-5 h-5 text-columbia-700" /> Recent Projects
           </h2>
+
           {projects.length === 0 ? (
             <p className="text-gray-500 text-sm">
               No projects yet — add one from the Projects tab.
@@ -200,4 +180,5 @@ function StatCard({
     </motion.div>
   );
 }
+
 
