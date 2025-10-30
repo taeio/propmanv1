@@ -9,18 +9,17 @@ export default function DashboardPage() {
   const projects = useAppStore((state) => state.projects);
   const clients = useAppStore((state) => state.clients);
 
- const [isHydrated, setIsHydrated] = useState(false);
+ const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    // Wait for Zustand persist hydration to complete
     // @ts-ignore
     const unsub = useAppStore.persist.onFinishHydration(() => {
-      setIsHydrated(true);
+      setHydrated(true);
       unsub();
     });
   }, []);
 
-  if (!isHydrated) {
+  if (!hydrated) {
     return (
       <Layout>
         <div className="p-6">
