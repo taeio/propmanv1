@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Users, Plus, Trash, Edit } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Layout from "@/components/Layout";
-import { useAppStore } from "@/store/useAppStore";
+import { useAppStore } from "../store/useAppStore";
 
 export default function ClientsPage() {
   const clients = useAppStore((state) => state.clients);
