@@ -10,6 +10,7 @@ type RentStatus = "Paid" | "Late" | "Due";
 export default function ClientsPage() {
   const clients = useAppStore((state) => state.clients);
   const addClient = useAppStore((state) => state.addClient);
+  // Use the selector form so the component subscribes correctly
   const updateClient = useAppStore((state) => state.updateClient);
   const deleteClient = useAppStore((state) => state.deleteClient);
 
@@ -59,7 +60,17 @@ export default function ClientsPage() {
     };
 
     if (editingClientId !== null) {
-      updateClient(editingClientId, clientData);
+      // Guard: check updateClient at runtime so we don't try to call undefined
+      if (typeof updateClient === "function") {
+        updateClient(editingClientId, clientData);
+      } else {
+        console.error("updateClient is not a function:", updateClient);
+        // optionally fall back to using the store's getState
+        const fallback = (useAppStore as any).getState?.()?.updateClient;
+        if (typeof fallback === "function") {
+          fallback(editingClientId, clientData);
+        }
+      }
     } else {
       addClient(clientData);
     }
@@ -70,6 +81,7 @@ export default function ClientsPage() {
 
   return (
     <Layout>
+      {/* ...rest of your component unchanged... */}
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold flex items-center gap-2">

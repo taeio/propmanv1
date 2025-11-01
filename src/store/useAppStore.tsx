@@ -1,4 +1,4 @@
-// /store/useAppStore.ts
+// /store/useAppStore.tsx
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -104,16 +104,22 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: "taeio-dashboard-storage",
-      // ✅ Type-safe merge fix
+      version: 1,
+      // Persist only serializable state (exclude functions) to avoid storing actions
+      partialize: (state) => ({
+        projects: state.projects,
+        clients: state.clients,
+        notes: state.notes,
+      }),
+      // Safely merge persisted state and ALWAYS reattach actions from currentState
       merge: (persistedState: unknown, currentState) => {
-        // persistedState can be null on first run, so default to an empty object
         const typedPersisted = (persistedState as Partial<AppStore> | null) ?? {};
 
         return {
           ...currentState,
-          // persisted values (if any) override current primitives/arrays
+          // override arrays/primitives from persisted state if present
           ...typedPersisted,
-          // Reattach all actions so they don’t get lost on hydration
+          // Reattach actions to ensure they're functions after hydration
           addClient: currentState.addClient,
           updateClient: currentState.updateClient,
           deleteClient: currentState.deleteClient,
@@ -128,7 +134,6 @@ export const useAppStore = create<AppStore>()(
     }
   )
 );
-
 
 
 
