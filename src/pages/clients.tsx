@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Layout from "@/components/Layout";
 import { useAppStore } from "../store/useAppStore";
 
+console.log(" Store contents:", useAppStore.getState());
+
 export default function ClientsPage() {
   const clients = useAppStore((state) => state.clients);
   const addClient = useAppStore((state) => state.addClient);
