@@ -3,9 +3,9 @@ import React, { useState } from "react";
 import { Users, Plus, Trash, Edit } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Layout from "@/components/Layout";
-import { useAppStore } from "../store/useAppStore";
+import { useAppStore } from "@/store/useAppStore";
 
-console.log(" Store contents:", useAppStore.getState());
+type RentStatus = "Paid" | "Late" | "Due";
 
 export default function ClientsPage() {
   const clients = useAppStore((state) => state.clients);
@@ -15,13 +15,12 @@ export default function ClientsPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClientId, setEditingClientId] = useState<number | null>(null);
-
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
     unitNumber: "",
     rentAmount: "",
-    status: "Due",
+    status: "Due" as RentStatus,
   });
 
   const resetForm = () => {
@@ -49,18 +48,21 @@ export default function ClientsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.firstName || !form.lastName) return;
+    if (!form.firstName || !form.lastName || !form.unitNumber) return;
 
-    const data = {
+    const clientData = {
       firstName: form.firstName,
       lastName: form.lastName,
       unitNumber: form.unitNumber,
-      rentAmount: parseFloat(form.rentAmount),
-      status: form.status as "Paid" | "Late" | "Due",
+      rentAmount: Number(form.rentAmount),
+      status: form.status,
     };
 
-    if (editingClientId !== null) updateClient(editingClientId, data);
-    else addClient(data);
+    if (editingClientId !== null) {
+      updateClient(editingClientId, clientData);
+    } else {
+      addClient(clientData);
+    }
 
     resetForm();
     setModalOpen(false);
@@ -69,22 +71,20 @@ export default function ClientsPage() {
   return (
     <Layout>
       <div className="p-6">
-        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-600" /> Tenants
+            <Users className="w-6 h-6 text-red-600" /> Tenants
           </h1>
           <button
             onClick={() => setModalOpen(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
+            className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-700"
           >
             <Plus size={18} /> Add Tenant
           </button>
         </div>
 
-        {/* Client List */}
         {clients.length === 0 ? (
-          <p className="text-gray-500">No tenants yet — add one above!</p>
+          <p className="text-gray-500">No tenants yet. Add one above!</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {clients.map((client) => (
@@ -97,23 +97,21 @@ export default function ClientsPage() {
                 <h3 className="text-lg font-bold">
                   {client.firstName} {client.lastName}
                 </h3>
-                <p className="text-sm text-gray-600">🏠 Unit: {client.unitNumber}</p>
+                <p className="text-sm text-gray-600">Unit #: {client.unitNumber}</p>
                 <p className="text-sm text-gray-600">
-                  💰 Rent: ${client.rentAmount?.toLocaleString()}
+                  Rent: ${client.rentAmount.toLocaleString()}
                 </p>
-                <p
-                  className={`text-sm font-semibold mt-1 ${
+                <span
+                  className={`inline-block mt-2 px-2 py-1 text-xs rounded-full ${
                     client.status === "Paid"
-                      ? "text-green-600"
+                      ? "bg-green-100 text-green-700"
                       : client.status === "Late"
-                      ? "text-red-600"
-                      : "text-yellow-600"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-yellow-100 text-yellow-700"
                   }`}
                 >
                   {client.status}
-                </p>
-
-                {/* Buttons */}
+                </span>
                 <div className="flex justify-end gap-2 mt-3">
                   <button
                     onClick={() => openEditModal(client)}
@@ -134,7 +132,6 @@ export default function ClientsPage() {
         )}
       </div>
 
-      {/* Modal */}
       <AnimatePresence>
         {modalOpen && (
           <motion.div
@@ -153,59 +150,48 @@ export default function ClientsPage() {
                 {editingClientId ? "Edit Tenant" : "New Tenant"}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="First Name"
-                    value={form.firstName}
-                    onChange={(e) =>
-                      setForm({ ...form, firstName: e.target.value })
-                    }
-                    className="w-1/2 border rounded-lg p-2"
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Last Name"
-                    value={form.lastName}
-                    onChange={(e) =>
-                      setForm({ ...form, lastName: e.target.value })
-                    }
-                    className="w-1/2 border rounded-lg p-2"
-                    required
-                  />
-                </div>
-
+                <input
+                  type="text"
+                  placeholder="First Name"
+                  value={form.firstName}
+                  onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                  className="w-full border rounded-lg p-2"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Last Name"
+                  value={form.lastName}
+                  onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                  className="w-full border rounded-lg p-2"
+                  required
+                />
                 <input
                   type="text"
                   placeholder="Unit #"
                   value={form.unitNumber}
-                  onChange={(e) =>
-                    setForm({ ...form, unitNumber: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, unitNumber: e.target.value })}
                   className="w-full border rounded-lg p-2"
+                  required
                 />
-
                 <input
                   type="number"
                   placeholder="Rent Amount"
                   value={form.rentAmount}
-                  onChange={(e) =>
-                    setForm({ ...form, rentAmount: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, rentAmount: e.target.value })}
                   className="w-full border rounded-lg p-2"
+                  required
                 />
-
                 <select
                   value={form.status}
                   onChange={(e) =>
-                    setForm({ ...form, status: e.target.value })
+                    setForm({ ...form, status: e.target.value as RentStatus })
                   }
                   className="w-full border rounded-lg p-2"
                 >
-                  <option value="Paid">Paid</option>
-                  <option value="Late">Late</option>
-                  <option value="Due">Due</option>
+                  <option>Paid</option>
+                  <option>Late</option>
+                  <option>Due</option>
                 </select>
 
                 <div className="flex justify-end gap-2 mt-4">
@@ -221,7 +207,7 @@ export default function ClientsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                   >
                     Save
                   </button>
@@ -234,6 +220,7 @@ export default function ClientsPage() {
     </Layout>
   );
 }
+
 
 
 
