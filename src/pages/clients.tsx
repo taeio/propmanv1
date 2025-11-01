@@ -8,11 +8,10 @@ import { useAppStore } from "@/store/useAppStore";
 type RentStatus = "Paid" | "Late" | "Due";
 
 export default function ClientsPage() {
-  const clients = useAppStore((state) => state.clients);
-  const addClient = useAppStore((state) => state.addClient);
-  // Use the selector form so the component subscribes correctly
-  const updateClient = useAppStore((state) => state.updateClient);
-  const deleteClient = useAppStore((state) => state.deleteClient);
+  const clients = useAppStore((s) => s.clients);
+  const addClient = useAppStore((s) => s.addClient);
+  const updateClient = useAppStore((s) => s.updateClient);
+  const deleteClient = useAppStore((s) => s.deleteClient);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClientId, setEditingClientId] = useState<number | null>(null);
@@ -41,7 +40,7 @@ export default function ClientsPage() {
       firstName: client.firstName,
       lastName: client.lastName,
       unitNumber: client.unitNumber,
-      rentAmount: client.rentAmount.toString(),
+      rentAmount: client.rentAmount?.toString() ?? "",
       status: client.status,
     });
     setModalOpen(true);
@@ -60,28 +59,39 @@ export default function ClientsPage() {
     };
 
     if (editingClientId !== null) {
-      // Guard: check updateClient at runtime so we don't try to call undefined
       if (typeof updateClient === "function") {
         updateClient(editingClientId, clientData);
       } else {
-        console.error("updateClient is not a function:", updateClient);
-        // optionally fall back to using the store's getState
+        console.error("updateClient is not available on selector:", updateClient);
+        // fallback (last resort)
         const fallback = (useAppStore as any).getState?.()?.updateClient;
-        if (typeof fallback === "function") {
-          fallback(editingClientId, clientData);
-        }
+        if (typeof fallback === "function") fallback(editingClientId, clientData);
       }
     } else {
-      addClient(clientData);
+      if (typeof addClient === "function") {
+        addClient(clientData);
+      } else {
+        const fallback = (useAppStore as any).getState?.()?.addClient;
+        if (typeof fallback === "function") fallback(clientData);
+      }
     }
 
     resetForm();
     setModalOpen(false);
   };
 
+  const handleDelete = (id: number) => {
+    if (typeof deleteClient === "function") {
+      deleteClient(id);
+    } else {
+      console.error("deleteClient is not available on selector:", deleteClient);
+      const fallback = (useAppStore as any).getState?.()?.deleteClient;
+      if (typeof fallback === "function") fallback(id);
+    }
+  };
+
   return (
     <Layout>
-      {/* ...rest of your component unchanged... */}
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold flex items-center gap-2">
@@ -111,7 +121,7 @@ export default function ClientsPage() {
                 </h3>
                 <p className="text-sm text-gray-600">Unit #: {client.unitNumber}</p>
                 <p className="text-sm text-gray-600">
-                  Rent: ${client.rentAmount.toLocaleString()}
+                  Rent: ${client.rentAmount?.toLocaleString?.() ?? client.rentAmount}
                 </p>
                 <span
                   className={`inline-block mt-2 px-2 py-1 text-xs rounded-full ${
@@ -132,7 +142,7 @@ export default function ClientsPage() {
                     <Edit size={16} />
                   </button>
                   <button
-                    onClick={() => deleteClient(client.id)}
+                    onClick={() => handleDelete(client.id)}
                     className="text-red-600 hover:text-red-800"
                   >
                     <Trash size={16} />
@@ -161,79 +171,74 @@ export default function ClientsPage() {
               <h2 className="text-xl font-semibold mb-4">
                 {editingClientId !== null ? "Edit Tenant" : "New Tenant"}
               </h2>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="First Name"
-                  value={form.firstName}
-                  onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Last Name"
-                  value={form.lastName}
-                  onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Unit #"
-                  value={form.unitNumber}
-                  onChange={(e) => setForm({ ...form, unitNumber: e.target.value })}
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
-                <input
-                  type="number"
-                  placeholder="Rent Amount"
-                  value={form.rentAmount}
-                  onChange={(e) => setForm({ ...form, rentAmount: e.target.value })}
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
-                <select
-                  value={form.status}
-                  onChange={(e) =>
-                    setForm({ ...form, status: e.target.value as RentStatus })
-                  }
-                  className="w-full border rounded-lg p-2"
-                >
-                  <option>Paid</option>
-                  <option>Late</option>
-                  <option>Due</option>
-                </select>
-
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetForm();
-                      setModalOpen(false);
-                    }}
-                    className="px-4 py-2 bg-gray-200 rounded-lg"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                  >
-                    Save
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Layout>
-  );
-}
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                          <input
+                            type="text"
+                            placeholder="First Name"
+                            value={form.firstName}
+                            onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                            className="w-full border rounded-lg p-2"
+                            required
+                          />
+                          <input
+                            type="text"
+                            placeholder="Last Name"
+                            value={form.lastName}
+                            onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                            className="w-full border rounded-lg p-2"
+                            required
+                          />
+                          <input
+                            type="text"
+                            placeholder="Unit Number"
+                            value={form.unitNumber}
+                            onChange={(e) => setForm({ ...form, unitNumber: e.target.value })}
+                            className="w-full border rounded-lg p-2"
+                            required
+                          />
+                          <input
+                            type="number"
+                            placeholder="Rent Amount"
+                            value={form.rentAmount}
+                            onChange={(e) => setForm({ ...form, rentAmount: e.target.value })}
+                            className="w-full border rounded-lg p-2"
+                          />
+                          <select
+                            value={form.status}
+                            onChange={(e) => setForm({ ...form, status: e.target.value as RentStatus })}
+                            className="w-full border rounded-lg p-2"
+                          >
+                            <option value="Due">Due</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Late">Late</option>
+                          </select>
+          
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                resetForm();
+                                setModalOpen(false);
+                              }}
+                              className="px-4 py-2 rounded-lg border"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+                            >
+                              {editingClientId !== null ? "Update" : "Save"}
+                            </button>
+                          </div>
+                        </form>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Layout>
 
 
 
 
-
+                )};
