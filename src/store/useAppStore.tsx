@@ -1,5 +1,4 @@
 // /store/useAppStore.ts
-"use client";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -12,7 +11,6 @@ type Project = {
   status: "In Progress" | "Completed" | "Pending";
 };
 
-// ✅ CLIENT TYPE
 type Client = {
   id: number;
   firstName: string;
@@ -51,7 +49,7 @@ type AppStore = {
 
 export const useAppStore = create<AppStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       projects: [],
       clients: [],
       notes: [],
@@ -75,17 +73,7 @@ export const useAppStore = create<AppStore>()(
       // --- Clients (Tenants) ---
       addClient: (data) =>
         set((state) => ({
-          clients: [
-            ...state.clients,
-            {
-              id: Date.now(),
-              firstName: data.firstName,
-              lastName: data.lastName,
-              unitNumber: data.unitNumber,
-              rentAmount: data.rentAmount,
-              status: data.status,
-            },
-          ],
+          clients: [...state.clients, { id: Date.now(), ...data }],
         })),
       updateClient: (id, data) =>
         set((state) => ({
@@ -116,30 +104,28 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: "taeio-dashboard-storage",
-      storage: {
-        getItem: (name) => {
-          if (typeof window === "undefined") return null;
-          const item = localStorage.getItem(name);
-          return item ? JSON.parse(item) : null;
-        },
-        setItem: (name, value) => {
-          if (typeof window === "undefined") return;
-          localStorage.setItem(name, JSON.stringify(value));
-        },
-        removeItem: (name) => {
-          if (typeof window === "undefined") return;
-          localStorage.removeItem(name);
-        },
+      // ✅ Type-safe merge fix
+      merge: (persistedState: unknown, currentState) => {
+        const typedPersisted = persistedState as Partial<AppStore> | null;
+
+        return {
+          ...currentState,
+          ...typedPersisted,
+          // Reattach all actions so they don’t get lost on hydration
+          addClient: currentState.addClient,
+          updateClient: currentState.updateClient,
+          deleteClient: currentState.deleteClient,
+          addProject: currentState.addProject,
+          updateProject: currentState.updateProject,
+          deleteProject: currentState.deleteProject,
+          addNote: currentState.addNote,
+          updateNote: currentState.updateNote,
+          deleteNote: currentState.deleteNote,
+        };
       },
-      // Here is the added merge function to prevent actions from being lost on hydration
-      merge: (persistedState, currentState) => ({
-        ...currentState,
-        ...(persistedState ?? {}),
-      }),
     }
   )
 );
-
 
 
 
