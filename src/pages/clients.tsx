@@ -10,8 +10,7 @@ type RentStatus = "Paid" | "Late" | "Due";
 export default function ClientsPage() {
   const clients = useAppStore((state) => state.clients);
   const addClient = useAppStore((state) => state.addClient);
-  // ✅ FIX: make sure updateClient is retrieved safely from store
-  const updateClient = useAppStore.getState().updateClient;
+  const updateClient = useAppStore((state) => state.updateClient);
   const deleteClient = useAppStore((state) => state.deleteClient);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -60,7 +59,6 @@ export default function ClientsPage() {
     };
 
     if (editingClientId !== null) {
-      // ✅ FIX: use the updateClient function directly from Zustand store
       updateClient(editingClientId, clientData);
     } else {
       addClient(clientData);
@@ -149,7 +147,7 @@ export default function ClientsPage() {
               exit={{ scale: 0.9 }}
             >
               <h2 className="text-xl font-semibold mb-4">
-                {editingClientId ? "Edit Tenant" : "New Tenant"}
+                {editingClientId !== null ? "Edit Tenant" : "New Tenant"}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <input
@@ -222,7 +220,6 @@ export default function ClientsPage() {
     </Layout>
   );
 }
-
 
 
 

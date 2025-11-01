@@ -106,10 +106,12 @@ export const useAppStore = create<AppStore>()(
       name: "taeio-dashboard-storage",
       // ✅ Type-safe merge fix
       merge: (persistedState: unknown, currentState) => {
-        const typedPersisted = persistedState as Partial<AppStore> | null;
+        // persistedState can be null on first run, so default to an empty object
+        const typedPersisted = (persistedState as Partial<AppStore> | null) ?? {};
 
         return {
           ...currentState,
+          // persisted values (if any) override current primitives/arrays
           ...typedPersisted,
           // Reattach all actions so they don’t get lost on hydration
           addClient: currentState.addClient,
