@@ -7,7 +7,11 @@ import { useAppStore } from "@/store/useAppStore";
 
 export default function DashboardPage() {
   const projects = useAppStore((state) => state.projects);
-  const clients = useAppStore((state) => state.clients);
+  
+  // ✅ Only show clients with rent status "Due" or "Late"
+  const clients = useAppStore((state) =>
+    state.clients.filter((client) => client.status === "Due" || client.status === "Late")
+  );
 
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -70,7 +74,7 @@ export default function DashboardPage() {
             icon={<ClipboardList className="w-5 h-5 text-columbia-700" />}
           />
           <StatCard
-            title="Clients"
+            title="Clients (Due/Late)"
             value={clients.length}
             icon={<Users className="w-5 h-5 text-columbia-700" />}
           />
@@ -90,7 +94,7 @@ export default function DashboardPage() {
             className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
           >
             <p className="text-gray-500 text-center text-lg">
-              No clients yet — add one from the Clients tab.
+              No tenants with due or late rent right now — nice work!
             </p>
           </motion.div>
         )}
@@ -144,7 +148,9 @@ export default function DashboardPage() {
                           {project.status}
                         </span>
                       </td>
-                      <td className="py-2">${project.amountPaid.toLocaleString()}</td>
+                      <td className="py-2">
+                        ${project.amountPaid.toLocaleString()}
+                      </td>
                     </tr>
                   ))}
               </tbody>
