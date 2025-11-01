@@ -7,18 +7,13 @@ import { useAppStore } from "@/store/useAppStore";
 
 export default function DashboardPage() {
   const projects = useAppStore((state) => state.projects);
-  
-  // ✅ Only show clients with rent status "Due" or "Late"
-  const clients = useAppStore((state) =>
-    state.clients.filter((client) => client.status === "Due" || client.status === "Late")
-  );
+  const clients = useAppStore((state) => state.clients);
 
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    // Hydrate Zustand manually (since custom storage disables persist.onFinishHydration)
+    // ✅ Only run once on mount
     const storedData = localStorage.getItem("taeio-dashboard-storage");
-
     if (storedData) {
       try {
         const parsed = JSON.parse(storedData).state;
@@ -29,10 +24,9 @@ export default function DashboardPage() {
         console.error("Failed to load persisted state:", err);
       }
     }
-
-    // Give hydration a small delay to avoid flicker
+    // Hydration only runs once
     setTimeout(() => setIsHydrated(true), 200);
-  }, []);
+  }, []); // <-- empty dependency array = run once
 
   if (!isHydrated) {
     return (
@@ -43,6 +37,11 @@ export default function DashboardPage() {
       </Layout>
     );
   }
+
+  // ✅ Filter only Due or Late clients for dashboard
+  const dueClients = clients.filter(
+    (client) => client.status === "Due" || client.status === "Late"
+  );
 
   const totalPaid = projects.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
   const activeProjects = projects.filter((p) => p.status === "In Progress").length;
@@ -75,7 +74,7 @@ export default function DashboardPage() {
           />
           <StatCard
             title="Clients (Due/Late)"
-            value={clients.length}
+            value={dueClients.length}
             icon={<Users className="w-5 h-5 text-columbia-700" />}
           />
           <StatCard
@@ -85,17 +84,50 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* No Clients Yet */}
-        {clients.length === 0 && (
+        {/* Due or Late Clients */}
+        {dueClients.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
             className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
           >
-            <p className="text-gray-500 text-center text-lg">
-              No tenants with due or late rent right now — nice work!
-            </p>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
+              <Users className="w-5 h-5 text-columbia-700" /> Rent Due / Late Clients
+            </h2>
+            <table className="min-w-full text-sm text-gray-700">
+              <thead>
+                <tr className="text-left text-gray-500 border-b">
+                  <th className="pb-2">Name</th>
+                  <th className="pb-2">Property</th>
+                  <th className="pb-2">Rent Status</th>
+                  <th className="pb-2">Rent Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dueClients.map((client) => (
+                  <tr
+                    key={client.id}
+                    className="border-b last:border-none hover:bg-gray-50 transition"
+                  >
+                    <td className="py-2">{client.firstName}</td>
+                    <td className="py-2">{client.unitNumber || "N/A"}</td>
+                    <td className="py-2">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          client.status === "Late"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {client.status}
+                      </span>
+                    </td>
+                    <td className="py-2">${client.rentAmount?.toLocaleString() || "0"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </motion.div>
         )}
 
@@ -148,9 +180,7 @@ export default function DashboardPage() {
                           {project.status}
                         </span>
                       </td>
-                      <td className="py-2">
-                        ${project.amountPaid.toLocaleString()}
-                      </td>
+                      <td className="py-2">${project.amountPaid.toLocaleString()}</td>
                     </tr>
                   ))}
               </tbody>
@@ -186,6 +216,5 @@ function StatCard({
     </motion.div>
   );
 }
-
 
 
