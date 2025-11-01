@@ -1,31 +1,21 @@
-import "..styles/globals.css";
+"use client";
 import React, { useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import Topbar from "@/components/Topbar";
+import Sidebar from "./Sidebar";
+import Topbar from "./Topbar";
 
-export const metadata = {
-  title: "PropMan",
-  description: "Property management dashboard",
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  // keep sidebar open state here so it persists across route changes
+export default function Layout({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-gray-50">
-        {/* Topbar and Sidebar live here and will not be unmounted on route navigation */}
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col">
         <Topbar setIsOpen={setIsOpen} />
-        <div className="flex">
-          <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-          {/* main content reserved area (account for sidebar width on desktop) */}
-          <main className="flex-1 min-h-screen md:ml-64">
-            {/* children will be swapped while Topbar/Sidebar remain mounted */}
-            {children}
-          </main>
-        </div>
-      </body>
-    </html>
+        <main className="p-6 mt-16 md:mt-0">{children}</main>
+      </div>
+    </div>
   );
 }
