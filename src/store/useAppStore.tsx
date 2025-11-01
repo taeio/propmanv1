@@ -49,6 +49,23 @@ type AppStore = {
 
 const STORAGE_KEY = "taeio-dashboard-storage";
 
+function sanitizeRawPersisted(raw: unknown) {
+  try {
+    if (!raw) return null;
+    // raw might be a JSON string already parsed by persist, but we'll be defensive.
+    const top = raw as any;
+    const state = top?.state ?? top;
+
+    return {
+      projects: Array.isArray(state?.projects) ? state.projects : [],
+      clients: Array.isArray(state?.clients) ? state.clients : [],
+      notes: Array.isArray(state?.notes) ? state.notes : [],
+    };
+  } catch (err) {
+    return null;
+  }
+}
+
 export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
@@ -106,53 +123,39 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: STORAGE_KEY,
-      // bump this when making incompatible persisted-shape changes
       version: 1,
 
-      // Persist only data (no functions) so functions never get serialized
+      // Persist only serializable data (no functions)
       partialize: (state) => ({
         projects: state.projects,
         clients: state.clients,
         notes: state.notes,
       }),
 
-      // Migrate is called when persisted version !== current version.
-      // Also helpful to sanitize previously-corrupted persisted values (old clients that saved functions).
-      // Return a Promise resolving to the cleaned persisted state shape.
+      // Migrate: sanitize any older/corrupted persisted payloads
       migrate: async (persistedRaw) => {
         try {
-          if (!persistedRaw) return persistedRaw;
-          // If old shape was { state: { ... } } we try to handle both shapes.
+          const cleaned = sanitizeRawPersisted(persistedRaw);
+          if (!cleaned) return undefined;
+          // Persist format can be either { state: {...} } or direct object
           const top = persistedRaw as any;
-          const state = top?.state ?? top;
-
-          const cleaned = {
-            projects: Array.isArray(state?.projects) ? state.projects : [],
-            clients: Array.isArray(state?.clients) ? state.clients : [],
-            notes: Array.isArray(state?.notes) ? state.notes : [],
-          };
-
-          // Preserve outer wrapper if it existed
           if (top?.state) {
             return { ...top, state: cleaned };
           }
           return cleaned;
         } catch (err) {
-          console.warn("[useAppStore:migrate] failed to migrate persisted state, clearing it", err);
+          console.warn("[useAppStore:migrate] failed, clearing persisted state", err);
           return undefined;
         }
       },
 
-      // Ensure action functions are reattached after hydration and persisted arrays override defaults.
+      // Merge: Always keep current state's functions (actions) and override data with persisted arrays
       merge: (persistedState: unknown, currentState) => {
         const typed = (persistedState as Partial<AppStore> | null) ?? {};
-
         return {
-          // start with currentState (keeps action functions)
           ...currentState,
-          // then override serializable parts from persisted state
           ...typed,
-          // explicitly reattach actions to be extra safe
+          // explicit reattachment of actions
           addClient: currentState.addClient,
           updateClient: currentState.updateClient,
           deleteClient: currentState.deleteClient,
@@ -165,25 +168,35 @@ export const useAppStore = create<AppStore>()(
         } as AppStore;
       },
 
-      // Extra safeguard: when rehydration finishes, validate shape and if corrupted, remove key.
-      // This runs in the client after persist hydration.
+      // On rehydrate: extra safeguard + sanitize raw persisted key if needed (writes back cleaned payload)
       onRehydrateStorage: () => (state) => {
         try {
-          // state is the rehydrated slice; verify serializable parts exist and actions are functions
+          // Detect corrupted actions (defensive check)
           if (!state) return;
           const s = state as unknown as AppStore;
-          // If any action isn't a function at this point, something went wrong — clear storage.
           const actionsOk =
             typeof s.addClient === "function" &&
             typeof s.updateClient === "function" &&
             typeof s.deleteClient === "function";
 
+          // If actions are not functions, we will sanitize the persisted key so future hydrations are clean.
           if (!actionsOk) {
-            console.warn("[useAppStore] detected corrupted actions after rehydrate — clearing persisted storage");
+            console.warn("[useAppStore] corruption detected after rehydrate — sanitizing storage key:", STORAGE_KEY);
             try {
-              localStorage.removeItem(STORAGE_KEY);
+              const raw = localStorage.getItem(STORAGE_KEY);
+              const parsed = raw ? JSON.parse(raw) : null;
+              const cleaned = sanitizeRawPersisted(parsed) ?? { projects: [], clients: [], notes: [] };
+              // Persist cleaned payload in the most common shape (plain object). This will be picked up next time.
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+              // Also remove the key to force a full reset if desired:
+              // localStorage.removeItem(STORAGE_KEY);
             } catch (err) {
-              console.error("[useAppStore] failed to remove corrupted storage key:", err);
+              console.error("[useAppStore] failed to sanitize persisted storage:", err);
+              try {
+                localStorage.removeItem(STORAGE_KEY);
+              } catch (e) {
+                /* ignore */
+              }
             }
           }
         } catch (err) {
@@ -193,7 +206,6 @@ export const useAppStore = create<AppStore>()(
     }
   )
 );
-
 
 
 
