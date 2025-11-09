@@ -67,9 +67,6 @@ export default function ProjectsPage() {
     setModalOpen(false);
   };
 
-  return (
-    <div>
-      {/* Add your JSX content here */}
-    </div>
-  );
+  
+  
 }
