@@ -58,21 +58,9 @@ export default function ClientsPage() {
     };
 
     if (editingClientId !== null) {
-      if (typeof updateClient === "function") {
-        updateClient(editingClientId, clientData);
-      } else {
-        console.error("updateClient is not available on selector:", updateClient);
-        // fallback (last resort)
-        const fallback = (useAppStore as any).getState?.()?.updateClient;
-        if (typeof fallback === "function") fallback(editingClientId, clientData);
-      }
+      updateClient(editingClientId, clientData);
     } else {
-      if (typeof addClient === "function") {
-        addClient(clientData);
-      } else {
-        const fallback = (useAppStore as any).getState?.()?.addClient;
-        if (typeof fallback === "function") fallback(clientData);
-      }
+      addClient(clientData);
     }
 
     resetForm();
@@ -80,13 +68,7 @@ export default function ClientsPage() {
   };
 
   const handleDelete = (id: number) => {
-    if (typeof deleteClient === "function") {
-      deleteClient(id);
-    } else {
-      console.error("deleteClient is not available on selector:", deleteClient);
-      const fallback = (useAppStore as any).getState?.()?.deleteClient;
-      if (typeof fallback === "function") fallback(id);
-    }
+    deleteClient(id);
   };
 
   return (
