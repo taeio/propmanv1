@@ -71,172 +71,155 @@ export default function ProjectsPage() {
 
   // ✅ RETURN UI (this was missing)
   return (
-    <Layout>
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <Briefcase className="w-6 h-6 text-blue-600" /> Projects
-          </h1>
-          <button
-            onClick={() => setModalOpen(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
-          >
-            <Plus size={18} /> Add Project
-          </button>
-        </div>
+  <div className="p-6">
+    {/* Header */}
+    <div className="flex justify-between items-center mb-6">
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <Briefcase className="w-7 h-7" />
+        Projects
+      </h1>
 
-        {projects.length === 0 ? (
-          <p className="text-gray-500">No projects yet. Add one above!</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((project) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-xl shadow p-4 border border-gray-200"
-              >
-                <h3 className="text-lg font-bold">{project.name}</h3>
-                <p className="text-sm text-gray-600">
-                  Client: {project.externalClient}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Budget: ${project.budget.toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Paid: ${project.amountPaid.toLocaleString()}
-                </p>
+      <button
+        onClick={() => setModalOpen(true)}
+        className="px-4 py-2 rounded-xl bg-blue-600 text-white flex items-center gap-2"
+      >
+        <Plus className="w-5 h-5" />
+        New Project
+      </button>
+    </div>
 
-                <span
-                  className={`inline-block mt-2 px-2 py-1 text-xs rounded-full ${
-                    project.status === "Completed"
-                      ? "bg-green-100 text-green-800"
-                      : project.status === "Pending"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-blue-100 text-blue-700"
-                  }`}
-                >
-                  {project.status}
-                </span>
+    {/* Projects List */}
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      {projects.map((project) => (
+        <motion.div
+          key={project.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 border rounded-xl shadow bg-white"
+        >
+          <h2 className="text-xl font-semibold">{project.name}</h2>
+          <p className="text-gray-600">{project.externalClient}</p>
 
-                <div className="flex justify-end gap-2 mt-3">
-                  <button
-                    onClick={() => openEditModal(project)}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button
-                    onClick={() => deleteProject(project.id)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <Trash size={16} />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+          <div className="mt-3 text-sm">
+            <p>Budget: ${project.budget}</p>
+            <p>Paid: ${project.amountPaid}</p>
+            <p>Status: {project.status}</p>
           </div>
-        )}
-      </div>
 
-      <AnimatePresence>
-        {modalOpen && (
-          <motion.div
-            className="fixed inset-0 bg-black/40 flex justify-center items-center z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative"
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={() => openEditModal(project)}
+              className="p-2 rounded bg-yellow-400 text-white"
             >
-              <h2 className="text-xl font-semibold mb-4">
-                {editingProjectId ? "Edit Project" : "New Project"}
-              </h2>
+              <Edit className="w-4 h-4" />
+            </button>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Project Name"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
+            <button
+              onClick={() => deleteProject(project.id)}
+              className="p-2 rounded bg-red-500 text-white"
+            >
+              <Trash className="w-4 h-4" />
+            </button>
+          </div>
+        </motion.div>
+      ))}
+    </div>
 
-                <input
-                  type="text"
-                  placeholder="Client Name"
-                  value={form.externalClient}
-                  onChange={(e) =>
-                    setForm({ ...form, externalClient: e.target.value })
-                  }
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
+    {/* Modal */}
+    <AnimatePresence>
+      {modalOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 flex justify-center items-center p-4"
+        >
+          <motion.form
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            onSubmit={handleSubmit}
+            className="bg-white p-6 rounded-xl w-full max-w-md space-y-4"
+          >
+            <h2 className="text-xl font-bold">
+              {editingProjectId ? "Edit Project" : "New Project"}
+            </h2>
 
-                <input
-                  type="number"
-                  placeholder="Budget"
-                  value={form.budget}
-                  onChange={(e) =>
-                    setForm({ ...form, budget: e.target.value })
-                  }
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
+            <input
+              className="w-full p-2 border rounded"
+              placeholder="Project Name"
+              value={form.name}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, name: e.target.value }))
+              }
+            />
 
-                <input
-                  type="number"
-                  placeholder="Amount Paid"
-                  value={form.amountPaid}
-                  onChange={(e) =>
-                    setForm({ ...form, amountPaid: e.target.value })
-                  }
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
+            <input
+              className="w-full p-2 border rounded"
+              placeholder="External Client"
+              value={form.externalClient}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, externalClient: e.target.value }))
+              }
+            />
 
-                <select
-                  value={form.status}
-                  onChange={(e) =>
-                    setForm({ ...form, status: e.target.value as ProjectStatus })
-                  }
-                  className="w-full border rounded-lg p-2"
-                >
-                  <option>In Progress</option>
-                  <option>Completed</option>
-                  <option>Pending</option>
-                </select>
+            <input
+              className="w-full p-2 border rounded"
+              type="number"
+              placeholder="Budget"
+              value={form.budget}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, budget: e.target.value }))
+              }
+            />
 
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetForm();
-                      setModalOpen(false);
-                    }}
-                    className="px-4 py-2 bg-gray-200 rounded-lg"
-                  >
-                    Cancel
-                  </button>
+            <input
+              className="w-full p-2 border rounded"
+              type="number"
+              placeholder="Amount Paid"
+              value={form.amountPaid}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, amountPaid: e.target.value }))
+              }
+            />
 
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Save
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Layout>
-  );
+            <select
+              className="w-full p-2 border rounded"
+              value={form.status}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  status: e.target.value as ProjectStatus,
+                }))
+              }
+            >
+              <option>In Progress</option>
+              <option>Completed</option>
+              <option>Pending</option>
+            </select>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 border rounded"
+                onClick={() => {
+                  resetForm();
+                  setModalOpen(false);
+                }}
+              >
+                Cancel
+              </button>
+
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">
+                Save
+              </button>
+            </div>
+          </motion.form>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
+
 }
 
