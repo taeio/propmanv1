@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Cog } from "lucide-react";
-import Layout from "@/components/Layout";
+
 
 export default function SettingsPage() {
   const [userInfo, setUserInfo] = useState({ name: "John Doe", email: "john@email.com" });
@@ -10,7 +10,7 @@ export default function SettingsPage() {
   const [apiKey, setApiKey] = useState("sk-XXXX");
 
   return (
-    <Layout>
+
       <div className="p-6 space-y-8 max-w-lg mx-auto">
         <motion.h1
           initial={{ opacity: 0, x: -10 }}
@@ -56,6 +56,5 @@ export default function SettingsPage() {
           <button className="bg-blue-600 text-white px-4 py-2 rounded-xl mt-3 hover:bg-blue-700 transition">Save Changes</button>
         </div>
       </div>
-    </Layout>
   );
 }
