@@ -1,4 +1,5 @@
-import React, { ReactNode } from "react";
+"use client";
+import React, { ReactNode, useState } from "react";
 import dynamic from "next/dynamic";
 
 // Dynamically import the client components so they are only mounted on the client.
@@ -7,16 +8,17 @@ const Sidebar = dynamic(() => import("./Sidebar"), { ssr: false });
 const Topbar = dynamic(() => import("./Topbar"), { ssr: false });
 
 export default function Layout({ children }: { children: ReactNode }) {
-  // Keep layout as a server component — client-only pieces are dynamically mounted.
+  const [isOpen, setIsOpen] = useState(false);
+  
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar (client-only) */}
-      <Sidebar isOpen={false} setIsOpen={() => {}} />
+      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col">
         {/* Topbar (client-only) */}
-        <Topbar setIsOpen={() => {}} />
+        <Topbar setIsOpen={setIsOpen} />
         <main className="p-6 mt-16 md:mt-0">{children}</main>
       </div>
     </div>

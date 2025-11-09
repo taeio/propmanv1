@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Layout from "@/components/Layout";
 import { Briefcase, Users, DollarSign, ClipboardList } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
@@ -30,11 +29,9 @@ export default function DashboardPage() {
 
   if (!isHydrated) {
     return (
-      <Layout>
-        <div className="p-6">
-          <p className="text-gray-500">Loading dashboard...</p>
-        </div>
-      </Layout>
+      <div className="p-6">
+        <p className="text-gray-500">Loading dashboard...</p>
+      </div>
     );
   }
 
@@ -48,7 +45,6 @@ export default function DashboardPage() {
   const completedProjects = projects.filter((p) => p.status === "Completed").length;
 
   return (
-    <Layout>
       <div className="p-6 space-y-8">
         {/* Header */}
         <motion.h1
@@ -188,7 +184,6 @@ export default function DashboardPage() {
           )}
         </motion.div>
       </div>
-    </Layout>
   );
 }
 
