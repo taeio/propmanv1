@@ -130,32 +130,41 @@ export const useAppStore = create<AppStore>()(
 
         try {
           const stripMetadata = (obj: any) => {
-            const { id, createdAt, updatedAt, _synced, ...rest } = obj;
+            const { id, createdAt, updatedAt, _synced, _deleted, ...rest } = obj;
             return rest;
           };
 
+          const processBatch = async (items: any[], endpoint: string) => {
+            const promises = items.map((item) => {
+              if ((item as any)._deleted) {
+                return fetch(`${endpoint}/${item.id}`, { method: "DELETE" });
+              } else if (item.id && typeof item.id === 'number' && item.id > 1000000000) {
+                return fetch(endpoint, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(stripMetadata(item)),
+                });
+              } else if (item.id) {
+                return fetch(`${endpoint}/${item.id}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(stripMetadata(item)),
+                });
+              } else {
+                return fetch(endpoint, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(stripMetadata(item)),
+                });
+              }
+            });
+            return Promise.all(promises);
+          };
+
           await Promise.all([
-            ...unsyncedClients.map((client) =>
-              fetch("/api/data/clients", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(stripMetadata(client)),
-              })
-            ),
-            ...unsyncedProjects.map((project) =>
-              fetch("/api/data/projects", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(stripMetadata(project)),
-              })
-            ),
-            ...unsyncedNotes.map((note) =>
-              fetch("/api/data/notes", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(stripMetadata(note)),
-              })
-            ),
+            unsyncedClients.length > 0 ? processBatch(unsyncedClients, "/api/data/clients") : Promise.resolve(),
+            unsyncedProjects.length > 0 ? processBatch(unsyncedProjects, "/api/data/projects") : Promise.resolve(),
+            unsyncedNotes.length > 0 ? processBatch(unsyncedNotes, "/api/data/notes") : Promise.resolve(),
           ]);
 
           await get().syncWithDatabase();
