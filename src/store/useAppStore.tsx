@@ -26,10 +26,19 @@ type Note = {
   category: "client" | "project" | "finance" | "maintenance";
 };
 
+type Payment = {
+  id: number;
+  clientId: number;
+  amount: number;
+  paymentDate: string;
+  notes?: string;
+};
+
 type AppStore = {
   projects: Project[];
   clients: Client[];
   notes: Note[];
+  payments: Payment[];
   isAuthenticated: boolean;
   isSyncing: boolean;
 
@@ -52,6 +61,12 @@ type AppStore = {
   addNote: (data: Omit<Note, "id">) => Promise<void>;
   updateNote: (id: number, data: Partial<Note>) => Promise<void>;
   deleteNote: (id: number) => Promise<void>;
+
+  // --- Payments ---
+  addPayment: (data: Omit<Payment, "id">) => Promise<void>;
+  updatePayment: (id: number, data: Partial<Payment>) => Promise<void>;
+  deletePayment: (id: number) => Promise<void>;
+  getClientPayments: (clientId: number) => Payment[];
 };
 
 const STORAGE_KEY = "taeio-dashboard-storage-v2";
@@ -83,6 +98,7 @@ export const useAppStore = create<AppStore>()(
       projects: [],
       clients: [],
       notes: [],
+      payments: [],
       isAuthenticated: false,
       isSyncing: false,
 
@@ -97,17 +113,19 @@ export const useAppStore = create<AppStore>()(
 
         set({ isSyncing: true });
         try {
-          const [clients, projects, notes] = await Promise.all([
+          const [clients, projects, notes, payments] = await Promise.all([
             fetch("/api/data/clients").then((r) => r.ok ? r.json() : []),
             fetch("/api/data/projects").then((r) => r.ok ? r.json() : []),
             fetch("/api/data/notes").then((r) => r.ok ? r.json() : []),
+            fetch("/api/data/payments").then((r) => r.ok ? r.json() : []),
           ]);
 
           const markSynced = (items: any[]) => items.map((item) => ({ ...item, _synced: true }));
           set({ 
             clients: markSynced(clients), 
             projects: markSynced(projects), 
-            notes: markSynced(notes) 
+            notes: markSynced(notes),
+            payments: markSynced(payments)
           });
         } catch (error) {
           console.error("Failed to sync with database:", error);
@@ -117,14 +135,15 @@ export const useAppStore = create<AppStore>()(
       },
 
       migrateLocalDataToDatabase: async () => {
-        const { clients, projects, notes, isAuthenticated } = get();
+        const { clients, projects, notes, payments, isAuthenticated } = get();
         if (!isAuthenticated) return;
 
         const unsyncedClients = clients.filter((c: any) => !c._synced);
         const unsyncedProjects = projects.filter((p: any) => !p._synced);
         const unsyncedNotes = notes.filter((n: any) => !n._synced);
+        const unsyncedPayments = payments.filter((p: any) => !p._synced);
 
-        if (unsyncedClients.length === 0 && unsyncedProjects.length === 0 && unsyncedNotes.length === 0) {
+        if (unsyncedClients.length === 0 && unsyncedProjects.length === 0 && unsyncedNotes.length === 0 && unsyncedPayments.length === 0) {
           return;
         }
 
@@ -165,6 +184,7 @@ export const useAppStore = create<AppStore>()(
             unsyncedClients.length > 0 ? processBatch(unsyncedClients, "/api/data/clients") : Promise.resolve(),
             unsyncedProjects.length > 0 ? processBatch(unsyncedProjects, "/api/data/projects") : Promise.resolve(),
             unsyncedNotes.length > 0 ? processBatch(unsyncedNotes, "/api/data/notes") : Promise.resolve(),
+            unsyncedPayments.length > 0 ? processBatch(unsyncedPayments, "/api/data/payments") : Promise.resolve(),
           ]);
 
           await get().syncWithDatabase();
@@ -367,6 +387,75 @@ export const useAppStore = create<AppStore>()(
           }
         }
       },
+
+      // --- Payments ---
+      addPayment: async (data) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          const response = await fetch("/api/data/payments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const payment = await response.json();
+          set((state) => ({ payments: [...state.payments, { ...payment, _synced: true }] }));
+        } else {
+          set((state) => ({
+            payments: [...state.payments, { id: Date.now(), ...data }],
+          }));
+        }
+      },
+
+      updatePayment: async (id, data) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          const response = await fetch(`/api/data/payments/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const payment = await response.json();
+          set((state) => ({
+            payments: state.payments.map((p) => p.id === id ? { ...payment, _synced: true } : p),
+          }));
+        } else {
+          set((state) => ({
+            payments: state.payments.map((p) =>
+              p.id === id ? { ...p, ...data, _synced: false } : p
+            ),
+          }));
+        }
+      },
+
+      deletePayment: async (id) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          await fetch(`/api/data/payments/${id}`, { method: "DELETE" });
+          set((state) => ({
+            payments: state.payments.filter((p) => p.id !== id),
+          }));
+        } else {
+          const payment = get().payments.find((p) => p.id === id);
+          if ((payment as any)?._synced) {
+            set((state) => ({
+              payments: state.payments.map((p) => 
+                p.id === id ? { ...p, _synced: false, _deleted: true } : p
+              ),
+            }));
+          } else {
+            set((state) => ({
+              payments: state.payments.filter((p) => p.id !== id),
+            }));
+          }
+        }
+      },
+
+      getClientPayments: (clientId) => {
+        return get().payments.filter((p) => p.clientId === clientId);
+      },
     }),
     {
       name: STORAGE_KEY,
@@ -376,6 +465,7 @@ export const useAppStore = create<AppStore>()(
         projects: state.projects,
         clients: state.clients,
         notes: state.notes,
+        payments: state.payments,
       }),
     }
   )
