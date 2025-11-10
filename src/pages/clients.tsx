@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Users, Plus, Trash, Edit } from "lucide-react";
+import { Users, Plus, Trash, Edit, DollarSign } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
 
@@ -11,8 +11,11 @@ export default function ClientsPage() {
   const addClient = useAppStore((s) => s.addClient);
   const updateClient = useAppStore((s) => s.updateClient);
   const deleteClient = useAppStore((s) => s.deleteClient);
+  const addPayment = useAppStore((s) => s.addPayment);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [editingClientId, setEditingClientId] = useState<number | null>(null);
   const [form, setForm] = useState({
     firstName: "",
@@ -20,6 +23,11 @@ export default function ClientsPage() {
     unitNumber: "",
     rentAmount: "",
     status: "Due" as RentStatus,
+  });
+  const [paymentForm, setPaymentForm] = useState({
+    amount: "",
+    paymentDate: new Date().toISOString().split("T")[0],
+    notes: "",
   });
 
   const resetForm = () => {
@@ -31,6 +39,45 @@ export default function ClientsPage() {
       status: "Due",
     });
     setEditingClientId(null);
+  };
+
+  const resetPaymentForm = () => {
+    setPaymentForm({
+      amount: "",
+      paymentDate: new Date().toISOString().split("T")[0],
+      notes: "",
+    });
+    setSelectedClientId(null);
+  };
+
+  const openPaymentModal = (clientId: number) => {
+    const client = clients.find((c) => c.id === clientId);
+    if (client) {
+      setSelectedClientId(clientId);
+      setPaymentForm({
+        amount: client.rentAmount.toString(),
+        paymentDate: new Date().toISOString().split("T")[0],
+        notes: "",
+      });
+      setPaymentModalOpen(true);
+    }
+  };
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClientId || !paymentForm.amount) return;
+
+    await addPayment({
+      clientId: selectedClientId,
+      amount: Number(paymentForm.amount),
+      paymentDate: new Date(paymentForm.paymentDate).toISOString(),
+      notes: paymentForm.notes || undefined,
+    });
+
+    await updateClient(selectedClientId, { status: "Paid" });
+
+    resetPaymentForm();
+    setPaymentModalOpen(false);
   };
 
   const openEditModal = (client: any) => {
@@ -113,19 +160,28 @@ export default function ClientsPage() {
               >
                 {client.status}
               </span>
-              <div className="flex justify-end gap-2 mt-3">
+              <div className="flex justify-between items-center mt-3">
                 <button
-                  onClick={() => openEditModal(client)}
-                  className="text-blue-600 hover:text-blue-800"
+                  onClick={() => openPaymentModal(client.id)}
+                  className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
                 >
-                  <Edit size={16} />
+                  <DollarSign size={14} />
+                  Record Payment
                 </button>
-                <button
-                  onClick={() => handleDelete(client.id)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  <Trash size={16} />
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => openEditModal(client)}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    <Edit size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(client.id)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <Trash size={16} />
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))}
@@ -203,6 +259,88 @@ export default function ClientsPage() {
                     className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
                   >
                     {editingClientId !== null ? "Update" : "Save"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Payment Modal */}
+      <AnimatePresence>
+        {paymentModalOpen && selectedClientId && (
+          <motion.div
+            className="fixed inset-0 bg-black/40 flex justify-center items-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative"
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+            >
+              <h2 className="text-xl font-semibold mb-4">Record Payment</h2>
+              {(() => {
+                const client = clients.find((c) => c.id === selectedClientId);
+                return client ? (
+                  <p className="text-sm text-gray-600 mb-4">
+                    For {client.firstName} {client.lastName} - Unit {client.unitNumber}
+                  </p>
+                ) : null;
+              })()}
+              <form onSubmit={handlePaymentSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Amount</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Payment Amount"
+                    value={paymentForm.amount}
+                    onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                    className="w-full border rounded-lg p-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Payment Date</label>
+                  <input
+                    type="date"
+                    value={paymentForm.paymentDate}
+                    onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
+                    className="w-full border rounded-lg p-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+                  <textarea
+                    placeholder="Add notes about this payment..."
+                    value={paymentForm.notes}
+                    onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                    className="w-full border rounded-lg p-2"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetPaymentForm();
+                      setPaymentModalOpen(false);
+                    }}
+                    className="px-4 py-2 rounded-lg border"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+                  >
+                    Record Payment
                   </button>
                 </div>
               </form>

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Users, ClipboardList, Settings, X } from "lucide-react";
+import { Home, Users, ClipboardList, Settings, DollarSign, X } from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -27,6 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     { name: "Dashboard", href: "/", icon: <Home size={20} /> },
     { name: "Clients", href: "/clients", icon: <Users size={20} /> },
     { name: "Projects", href: "/projects", icon: <ClipboardList size={20} /> },
+    { name: "Finance", href: "/finance", icon: <DollarSign size={20} /> },
     { name: "Settings", href: "/settings", icon: <Settings size={20} /> },
   ];
 
