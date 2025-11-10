@@ -8,6 +8,16 @@ PropMan is a Next.js-based property management application designed to help prop
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (November 2025)
+
+**Phase 1: Database & Authentication Foundation**
+- Added PostgreSQL database with Drizzle ORM for future multi-tenant architecture
+- Implemented Replit OAuth authentication system via Passport.js
+- Created authentication API routes (/api/auth/login, /api/auth/logout, /api/auth/callback, /api/auth/user)
+- Added useAuth hook for frontend authentication state
+- **Important**: localStorage remains the primary data source - database is foundation for future features
+- All existing UI functionality preserved and working identically
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -57,9 +67,10 @@ Preferred communication style: Simple, everyday language.
    - Categories: "client" | "project" | "finance" | "maintenance"
 
 **Data Persistence**
-- **Storage**: Browser localStorage (no backend database)
-- **Persistence Mechanism**: Zustand persist middleware with automatic serialization
+- **Current Storage**: Browser localStorage via Zustand persist middleware
+- **Persistence Mechanism**: Automatic serialization with storage key `taeio-dashboard-storage`
 - **Hydration**: Manual localStorage read on dashboard mount to prevent SSR/CSR mismatches
+- **Future Storage**: PostgreSQL database with Drizzle ORM (foundation in place, not yet used for main data)
 
 ### Routing Structure
 
@@ -69,7 +80,13 @@ Preferred communication style: Simple, everyday language.
 - `/projects` - Project management (CRUD operations)
 - `/notes` - Note-taking interface
 - `/settings` - User preferences and configuration
+
+**API Routes**
 - `/api/hello` - Example API route (placeholder)
+- `/api/auth/login` - Initiates Replit OAuth flow
+- `/api/auth/callback` - OAuth callback handler
+- `/api/auth/logout` - Logs out and clears session
+- `/api/auth/user` - Returns current authenticated user (or 401 if not logged in)
 
 **Navigation**
 - Sidebar navigation with icons (Home, Users, ClipboardList, Settings)
@@ -115,7 +132,9 @@ Preferred communication style: Simple, everyday language.
 
 ### State & Data Management
 - **Zustand 5.0.8**: Lightweight state management with persistence
-- **Storage**: Browser localStorage (no external database)
+- **Storage (Current)**: Browser localStorage via Zustand
+- **Drizzle ORM 0.38.3**: TypeScript ORM for PostgreSQL (foundation layer)
+- **PostgreSQL**: Replit-hosted Neon database (for sessions and future multi-tenant data)
 
 ### UI & Styling
 - **Tailwind CSS 3.4.3**: Utility-first CSS framework
@@ -124,19 +143,67 @@ Preferred communication style: Simple, everyday language.
 - **Framer Motion 12.23.24**: Animation library
 - **Lucide React 0.548.0**: Icon library
 
+### Authentication & Backend
+- **Passport.js**: OAuth authentication middleware
+- **passport-openidconnect**: Replit OAuth strategy
+- **express-session**: Session management
+- **connect-pg-simple**: PostgreSQL session store
+- **pg**: PostgreSQL client library
+
 ### Development Tools
 - **ESLint 9.39.1**: Code linting with Next.js configuration
-- **@types/node, @types/react**: TypeScript definitions
+- **Drizzle Kit**: Database migrations and schema management
+- **@types/node, @types/react, @types/passport, @types/pg**: TypeScript definitions
 
 ### Runtime Configuration
 - **Dev Server**: Port 5000, bound to 0.0.0.0 (all interfaces)
 - **Production**: Same port configuration for consistency
 - **React Strict Mode**: Enabled for development warnings
 
-### Future Considerations
-The application currently uses localStorage for data persistence. If backend functionality is needed in the future, consider:
-- Adding a database (Postgres, MySQL, or MongoDB)
-- Implementing an ORM (Drizzle, Prisma, or TypeORM)
-- Creating API routes for CRUD operations
-- Adding authentication/authorization (NextAuth, Clerk, or similar)
-- Implementing real-time updates (WebSockets or polling)
+### Backend Architecture (Phase 1 Foundation - November 2025)
+
+**Database Layer**
+- **Schema Location**: `shared/schema.ts` defines all Drizzle models
+- **Connection**: `server/db.ts` manages PostgreSQL connection pool
+- **Storage Interface**: `server/storage.ts` provides data access methods
+- **Tables Created**:
+  - `users` - Authenticated user profiles (id, username, createdAt)
+  - `sessions` - Express session storage for Passport.js
+  - `projects` - Future multi-tenant project data (not yet used)
+  - `clients` - Future multi-tenant client data (not yet used)
+  - `notes` - Future multi-tenant notes (not yet used)
+
+**Authentication System**
+- **Provider**: Replit OAuth via `openid-client`
+- **Strategy**: Passport.js with OpenID Connect
+- **Session Store**: PostgreSQL via `connect-pg-simple`
+- **Configuration**: `server/replitAuth.ts` handles auth setup
+- **Middleware**: `src/lib/authMiddleware.ts` provides API route helpers
+- **Frontend Hook**: `src/hooks/useAuth.ts` manages auth state
+
+**Migration Strategy**
+- Database migrations run via `npm run db:push` (Drizzle Kit)
+- Schema changes pushed directly to database
+- Use `--force` flag if data-loss warnings appear
+
+### Current State & Roadmap
+
+**What Works Now (Phase 1 Complete)**
+✅ Database foundation with PostgreSQL + Drizzle ORM  
+✅ Authentication system with Replit OAuth  
+✅ Session management in database  
+✅ All existing UI features working with localStorage  
+✅ useAuth hook available for future UI integration  
+
+**Next Steps (Phase 2 - Future)**
+- Add "Login" button to UI using useAuth hook
+- Create property manager dashboard (separate from tenant view)
+- Migrate data from localStorage to database tables
+- Implement multi-tenancy (property managers own their data)
+- Add API routes for CRUD operations on database entities
+
+**Architecture Notes**
+- localStorage still primary data source for now
+- Database tables exist but aren't used for main app data yet
+- Authentication foundation enables future property manager accounts
+- Current app behavior unchanged - all features work identically
