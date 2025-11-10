@@ -8,6 +8,7 @@ import {
   timestamp,
   varchar,
   integer,
+  serial,
 } from "drizzle-orm/pg-core";
 
 // Session storage table (required for Replit Auth)
@@ -24,6 +25,7 @@ export const sessions = pgTable(
 // User storage table (required for Replit Auth)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: varchar("username").notNull(),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
@@ -34,7 +36,7 @@ export const users = pgTable("users", {
 
 // Projects table
 export const projects = pgTable("projects", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
   name: varchar("name").notNull(),
   externalClient: varchar("external_client").notNull(),
@@ -47,7 +49,7 @@ export const projects = pgTable("projects", {
 
 // Clients (tenants) table
 export const clients = pgTable("clients", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
   firstName: varchar("first_name").notNull(),
   lastName: varchar("last_name").notNull(),
@@ -60,7 +62,7 @@ export const clients = pgTable("clients", {
 
 // Notes table
 export const notes = pgTable("notes", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
   text: varchar("text").notNull(),
   category: varchar("category").notNull(),

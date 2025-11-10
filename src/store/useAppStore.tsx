@@ -30,21 +30,28 @@ type AppStore = {
   projects: Project[];
   clients: Client[];
   notes: Note[];
+  isAuthenticated: boolean;
+  isSyncing: boolean;
+
+  // --- Auth & Sync ---
+  setAuthenticated: (isAuth: boolean) => void;
+  syncWithDatabase: () => Promise<void>;
+  migrateLocalDataToDatabase: () => Promise<void>;
 
   // --- Projects ---
-  addProject: (data: Omit<Project, "id">) => void;
-  updateProject: (id: number, data: Partial<Project>) => void;
-  deleteProject: (id: number) => void;
+  addProject: (data: Omit<Project, "id">) => Promise<void>;
+  updateProject: (id: number, data: Partial<Project>) => Promise<void>;
+  deleteProject: (id: number) => Promise<void>;
 
   // --- Clients ---
-  addClient: (data: Omit<Client, "id">) => void;
-  updateClient: (id: number, data: Partial<Client>) => void;
-  deleteClient: (id: number) => void;
+  addClient: (data: Omit<Client, "id">) => Promise<void>;
+  updateClient: (id: number, data: Partial<Client>) => Promise<void>;
+  deleteClient: (id: number) => Promise<void>;
 
   // --- Notes ---
-  addNote: (data: Omit<Note, "id">) => void;
-  updateNote: (id: number, data: Partial<Note>) => void;
-  deleteNote: (id: number) => void;
+  addNote: (data: Omit<Note, "id">) => Promise<void>;
+  updateNote: (id: number, data: Partial<Note>) => Promise<void>;
+  deleteNote: (id: number) => Promise<void>;
 };
 
 const STORAGE_KEY = "taeio-dashboard-storage-v2";
@@ -76,54 +83,281 @@ export const useAppStore = create<AppStore>()(
       projects: [],
       clients: [],
       notes: [],
+      isAuthenticated: false,
+      isSyncing: false,
+
+      // --- Auth & Sync ---
+      setAuthenticated: (isAuth) => {
+        set({ isAuthenticated: isAuth });
+      },
+
+      syncWithDatabase: async () => {
+        const { isAuthenticated } = get();
+        if (!isAuthenticated) return;
+
+        set({ isSyncing: true });
+        try {
+          const [clients, projects, notes] = await Promise.all([
+            fetch("/api/data/clients").then((r) => r.ok ? r.json() : []),
+            fetch("/api/data/projects").then((r) => r.ok ? r.json() : []),
+            fetch("/api/data/notes").then((r) => r.ok ? r.json() : []),
+          ]);
+
+          const markSynced = (items: any[]) => items.map((item) => ({ ...item, _synced: true }));
+          set({ 
+            clients: markSynced(clients), 
+            projects: markSynced(projects), 
+            notes: markSynced(notes) 
+          });
+        } catch (error) {
+          console.error("Failed to sync with database:", error);
+        } finally {
+          set({ isSyncing: false });
+        }
+      },
+
+      migrateLocalDataToDatabase: async () => {
+        const { clients, projects, notes, isAuthenticated } = get();
+        if (!isAuthenticated) return;
+
+        const unsyncedClients = clients.filter((c: any) => !c._synced);
+        const unsyncedProjects = projects.filter((p: any) => !p._synced);
+        const unsyncedNotes = notes.filter((n: any) => !n._synced);
+
+        if (unsyncedClients.length === 0 && unsyncedProjects.length === 0 && unsyncedNotes.length === 0) {
+          return;
+        }
+
+        try {
+          const stripMetadata = (obj: any) => {
+            const { id, createdAt, updatedAt, _synced, ...rest } = obj;
+            return rest;
+          };
+
+          await Promise.all([
+            ...unsyncedClients.map((client) =>
+              fetch("/api/data/clients", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(stripMetadata(client)),
+              })
+            ),
+            ...unsyncedProjects.map((project) =>
+              fetch("/api/data/projects", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(stripMetadata(project)),
+              })
+            ),
+            ...unsyncedNotes.map((note) =>
+              fetch("/api/data/notes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(stripMetadata(note)),
+              })
+            ),
+          ]);
+
+          await get().syncWithDatabase();
+        } catch (error) {
+          console.error("Failed to migrate data to database:", error);
+        }
+      },
 
       // --- Projects ---
-      addProject: (data) =>
-        set((state) => ({
-          projects: [...state.projects, { id: Date.now(), ...data }],
-        })),
-      updateProject: (id, data) =>
-        set((state) => ({
-          projects: state.projects.map((p) =>
-            p.id === id ? { ...p, ...data } : p
-          ),
-        })),
-      deleteProject: (id) =>
-        set((state) => ({
-          projects: state.projects.filter((p) => p.id !== id),
-        })),
+      addProject: async (data) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          const response = await fetch("/api/data/projects", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const project = await response.json();
+          set((state) => ({ projects: [...state.projects, { ...project, _synced: true }] }));
+        } else {
+          set((state) => ({
+            projects: [...state.projects, { id: Date.now(), ...data }],
+          }));
+        }
+      },
 
-      // --- Clients (Tenants) ---
-      addClient: (data) =>
-        set((state) => ({
-          clients: [...state.clients, { id: Date.now(), ...data }],
-        })),
-      updateClient: (id, data) =>
-        set((state) => ({
-          clients: state.clients.map((c) =>
-            c.id === id ? { ...c, ...data } : c
-          ),
-        })),
-      deleteClient: (id) =>
-        set((state) => ({
-          clients: state.clients.filter((c) => c.id !== id),
-        })),
+      updateProject: async (id, data) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          const response = await fetch(`/api/data/projects/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const project = await response.json();
+          set((state) => ({
+            projects: state.projects.map((p) => p.id === id ? { ...project, _synced: true } : p),
+          }));
+        } else {
+          set((state) => ({
+            projects: state.projects.map((p) =>
+              p.id === id ? { ...p, ...data, _synced: false } : p
+            ),
+          }));
+        }
+      },
+
+      deleteProject: async (id) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          await fetch(`/api/data/projects/${id}`, { method: "DELETE" });
+          set((state) => ({
+            projects: state.projects.filter((p) => p.id !== id),
+          }));
+        } else {
+          const project = get().projects.find((p) => p.id === id);
+          if ((project as any)?._synced) {
+            set((state) => ({
+              projects: state.projects.map((p) => 
+                p.id === id ? { ...p, _synced: false, _deleted: true } : p
+              ),
+            }));
+          } else {
+            set((state) => ({
+              projects: state.projects.filter((p) => p.id !== id),
+            }));
+          }
+        }
+      },
+
+      // --- Clients ---
+      addClient: async (data) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          const response = await fetch("/api/data/clients", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const client = await response.json();
+          set((state) => ({ clients: [...state.clients, { ...client, _synced: true }] }));
+        } else {
+          set((state) => ({
+            clients: [...state.clients, { id: Date.now(), ...data }],
+          }));
+        }
+      },
+
+      updateClient: async (id, data) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          const response = await fetch(`/api/data/clients/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const client = await response.json();
+          set((state) => ({
+            clients: state.clients.map((c) => c.id === id ? { ...client, _synced: true } : c),
+          }));
+        } else {
+          set((state) => ({
+            clients: state.clients.map((c) =>
+              c.id === id ? { ...c, ...data, _synced: false } : c
+            ),
+          }));
+        }
+      },
+
+      deleteClient: async (id) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          await fetch(`/api/data/clients/${id}`, { method: "DELETE" });
+          set((state) => ({
+            clients: state.clients.filter((c) => c.id !== id),
+          }));
+        } else {
+          const client = get().clients.find((c) => c.id === id);
+          if ((client as any)?._synced) {
+            set((state) => ({
+              clients: state.clients.map((c) => 
+                c.id === id ? { ...c, _synced: false, _deleted: true } : c
+              ),
+            }));
+          } else {
+            set((state) => ({
+              clients: state.clients.filter((c) => c.id !== id),
+            }));
+          }
+        }
+      },
 
       // --- Notes ---
-      addNote: (data) =>
-        set((state) => ({
-          notes: [...state.notes, { id: Date.now(), ...data }],
-        })),
-      updateNote: (id, data) =>
-        set((state) => ({
-          notes: state.notes.map((n) =>
-            n.id === id ? { ...n, ...data } : n
-          ),
-        })),
-      deleteNote: (id) =>
-        set((state) => ({
-          notes: state.notes.filter((n) => n.id !== id),
-        })),
+      addNote: async (data) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          const response = await fetch("/api/data/notes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const note = await response.json();
+          set((state) => ({ notes: [...state.notes, { ...note, _synced: true }] }));
+        } else {
+          set((state) => ({
+            notes: [...state.notes, { id: Date.now(), ...data }],
+          }));
+        }
+      },
+
+      updateNote: async (id, data) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          const response = await fetch(`/api/data/notes/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const note = await response.json();
+          set((state) => ({
+            notes: state.notes.map((n) => n.id === id ? { ...note, _synced: true } : n),
+          }));
+        } else {
+          set((state) => ({
+            notes: state.notes.map((n) =>
+              n.id === id ? { ...n, ...data, _synced: false } : n
+            ),
+          }));
+        }
+      },
+
+      deleteNote: async (id) => {
+        const { isAuthenticated} = get();
+        
+        if (isAuthenticated) {
+          await fetch(`/api/data/notes/${id}`, { method: "DELETE" });
+          set((state) => ({
+            notes: state.notes.filter((n) => n.id !== id),
+          }));
+        } else {
+          const note = get().notes.find((n) => n.id === id);
+          if ((note as any)?._synced) {
+            set((state) => ({
+              notes: state.notes.map((n) => 
+                n.id === id ? { ...n, _synced: false, _deleted: true } : n
+              ),
+            }));
+          } else {
+            set((state) => ({
+              notes: state.notes.filter((n) => n.id !== id),
+            }));
+          }
+        }
+      },
     }),
     {
       name: STORAGE_KEY,

@@ -1,6 +1,7 @@
 "use client";
 import React, { ReactNode, useState } from "react";
 import dynamic from "next/dynamic";
+import { AuthSync } from "./auth/AuthSync";
 
 // Dynamically import the client components so they are only mounted on the client.
 // This avoids server/client markup mismatch (hydration errors).
@@ -12,6 +13,9 @@ export default function Layout({ children }: { children: ReactNode }) {
   
   return (
     <div className="flex min-h-screen bg-gray-100">
+      {/* Auth sync component - syncs auth state with store */}
+      <AuthSync />
+      
       {/* Sidebar (client-only) */}
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 

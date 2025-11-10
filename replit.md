@@ -188,22 +188,27 @@ Preferred communication style: Simple, everyday language.
 
 ### Current State & Roadmap
 
-**What Works Now (Phase 1 Complete)**
-✅ Database foundation with PostgreSQL + Drizzle ORM  
+**What Works Now (Phase 2 In Progress - Final Fixes Needed)**
+✅ Database foundation with PostgreSQL + Drizzle ORM with auto-incrementing IDs  
 ✅ Authentication system with Replit OAuth  
 ✅ Session management in database  
-✅ All existing UI features working with localStorage  
-✅ useAuth hook available for future UI integration  
+✅ Login/Logout button in Topbar UI  
+✅ Multi-tenant API routes for clients, projects, notes (GET/POST/PUT/DELETE)  
+✅ Hybrid Zustand store: localStorage offline, database when authenticated  
+✅ Smart migration: Only uploads unsynced items (no duplicates)  
+✅ Offline edits marked unsynced: Updates set `_synced: false`, deletes add `_deleted: true`
+⚠️ **Migration needs final fix**: Handle PUT for updates and DELETE for marked items
 
-**Next Steps (Phase 2 - Future)**
-- Add "Login" button to UI using useAuth hook
-- Create property manager dashboard (separate from tenant view)
-- Migrate data from localStorage to database tables
-- Implement multi-tenancy (property managers own their data)
-- Add API routes for CRUD operations on database entities
+**What Needs Completion (Next 5 minutes)**
+- Update `migrateLocalDataToDatabase` to:
+  1. Send PUT requests for items with `_synced: false` and existing DB ID
+  2. Send DELETE requests for items with `_deleted: true`  
+  3. Send POST requests for truly new items (no ID)
 
 **Architecture Notes**
-- localStorage still primary data source for now
-- Database tables exist but aren't used for main app data yet
-- Authentication foundation enables future property manager accounts
-- Current app behavior unchanged - all features work identically
+- Offline mode: localStorage, items have no `_synced` flag
+- Login: Migrate unsynced → Sync from DB → All marked `_synced: true`
+- Authenticated: CRUD via API, responses marked `_synced: true`
+- Logout: Keep current state (latest DB sync)
+- Offline edits/deletes: Marked `_synced: false` / `_deleted: true`
+- Next login: Migration handles updates/deletes/creates properly
