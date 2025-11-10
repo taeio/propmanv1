@@ -5,11 +5,13 @@ import {
   clients,
   projects,
   notes,
+  payments,
   type User,
   type UpsertUser,
   type Client,
   type Project,
   type Note,
+  type Payment,
 } from "../shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -35,6 +37,12 @@ export interface IStorage {
   createNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): Promise<Note>;
   updateNote(id: number, userId: string, data: Partial<Note>): Promise<Note | undefined>;
   deleteNote(id: number, userId: string): Promise<void>;
+  
+  getPayments(userId: string): Promise<Payment[]>;
+  getPayment(id: number, userId: string): Promise<Payment | undefined>;
+  createPayment(payment: Omit<Payment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Payment>;
+  updatePayment(id: number, userId: string, data: Partial<Payment>): Promise<Payment | undefined>;
+  deletePayment(id: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -146,6 +154,36 @@ export class DatabaseStorage implements IStorage {
 
   async deleteNote(id: number, userId: string): Promise<void> {
     await db.delete(notes).where(and(eq(notes.id, id), eq(notes.userId, userId)));
+  }
+
+  async getPayments(userId: string): Promise<Payment[]> {
+    return db.select().from(payments).where(eq(payments.userId, userId));
+  }
+
+  async getPayment(id: number, userId: string): Promise<Payment | undefined> {
+    const [payment] = await db
+      .select()
+      .from(payments)
+      .where(and(eq(payments.id, id), eq(payments.userId, userId)));
+    return payment;
+  }
+
+  async createPayment(paymentData: Omit<Payment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Payment> {
+    const [payment] = await db.insert(payments).values(paymentData as any).returning();
+    return payment;
+  }
+
+  async updatePayment(id: number, userId: string, data: Partial<Payment>): Promise<Payment | undefined> {
+    const [payment] = await db
+      .update(payments)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(payments.id, id), eq(payments.userId, userId)))
+      .returning();
+    return payment;
+  }
+
+  async deletePayment(id: number, userId: string): Promise<void> {
+    await db.delete(payments).where(and(eq(payments.id, id), eq(payments.userId, userId)));
   }
 }
 

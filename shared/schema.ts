@@ -70,9 +70,22 @@ export const notes = pgTable("notes", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Payments table
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  amount: integer("amount").notNull(),
+  paymentDate: timestamp("payment_date").notNull(),
+  notes: varchar("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Type exports
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type Note = typeof notes.$inferSelect;
+export type Payment = typeof payments.$inferSelect;
