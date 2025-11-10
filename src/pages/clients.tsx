@@ -12,11 +12,13 @@ export default function ClientsPage() {
   const updateClient = useAppStore((s) => s.updateClient);
   const deleteClient = useAppStore((s) => s.deleteClient);
   const addPayment = useAppStore((s) => s.addPayment);
+  const getClientPayments = useAppStore((s) => s.getClientPayments);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [editingClientId, setEditingClientId] = useState<number | null>(null);
+  const [expandedClientId, setExpandedClientId] = useState<number | null>(null);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -182,6 +184,43 @@ export default function ClientsPage() {
                     <Trash size={16} />
                   </button>
                 </div>
+              </div>
+
+              {/* Payment History Toggle */}
+              <div className="mt-3 border-t pt-3">
+                <button
+                  onClick={() => setExpandedClientId(expandedClientId === client.id ? null : client.id)}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  {expandedClientId === client.id ? "Hide" : "View"} Payment History ({getClientPayments(client.id).length})
+                </button>
+                
+                {expandedClientId === client.id && (
+                  <div className="mt-3 space-y-2">
+                    {getClientPayments(client.id).length === 0 ? (
+                      <p className="text-sm text-gray-500 italic">No payments recorded yet</p>
+                    ) : (
+                      getClientPayments(client.id)
+                        .slice()
+                        .sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime())
+                        .map((payment) => (
+                          <div key={payment.id} className="bg-gray-50 p-2 rounded text-sm">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="font-semibold text-green-600">${payment.amount.toLocaleString()}</span>
+                                <span className="text-gray-500 ml-2">
+                                  {new Date(payment.paymentDate).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                            {payment.notes && (
+                              <p className="text-gray-600 text-xs mt-1">{payment.notes}</p>
+                            )}
+                          </div>
+                        ))
+                    )}
+                  </div>
+                )}
               </div>
             </motion.div>
           ))}
