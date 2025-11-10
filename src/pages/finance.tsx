@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useAppStore } from "../store/useAppStore";
-import { DollarSign, TrendingUp, CreditCard, AlertCircle } from "lucide-react";
+import { DollarSign, TrendingUp, CreditCard, AlertCircle, Download } from "lucide-react";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 export default function FinancePage() {
   const { clients, projects, payments } = useAppStore();
@@ -43,9 +44,98 @@ export default function FinancePage() {
   const totalProjectPaid = projects.reduce((sum, project) => sum + project.amountPaid, 0);
   const projectBudgetRemaining = totalProjectBudget - totalProjectPaid;
 
+  // Prepare monthly revenue data for chart
+  const monthlyRevenue = payments.reduce((acc, payment) => {
+    const date = new Date(payment.paymentDate);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const monthName = date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    
+    if (!acc[monthKey]) {
+      acc[monthKey] = { monthKey, month: monthName, revenue: 0 };
+    }
+    acc[monthKey].revenue += payment.amount;
+    return acc;
+  }, {} as Record<string, { monthKey: string; month: string; revenue: number }>);
+
+  const chartData = Object.values(monthlyRevenue).sort((a, b) => {
+    return new Date(`${a.monthKey}-01`).getTime() - new Date(`${b.monthKey}-01`).getTime();
+  });
+
+  const exportToCSV = () => {
+    // Prepare CSV data
+    const csvRows = [];
+    
+    // Add header
+    csvRows.push("Financial Report - Generated " + new Date().toLocaleDateString());
+    csvRows.push("");
+    
+    // Summary section
+    csvRows.push("SUMMARY");
+    csvRows.push(`Total Rent Collected,$${totalRentCollected}`);
+    csvRows.push(`Expected Rent,$${expectedRent}`);
+    csvRows.push(`Outstanding Balance,$${outstandingBalance}`);
+    csvRows.push(`Late/Due Clients,${lateOrDueClients}`);
+    csvRows.push(`Project Budget Total,$${totalProjectBudget}`);
+    csvRows.push(`Project Budget Spent,$${totalProjectPaid}`);
+    csvRows.push(`Project Budget Remaining,$${projectBudgetRemaining}`);
+    csvRows.push("");
+    
+    // Payments section
+    csvRows.push("PAYMENTS");
+    csvRows.push("Date,Client,Unit,Amount,Notes");
+    payments
+      .slice()
+      .sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime())
+      .forEach((payment) => {
+        const client = clients.find((c) => c.id === payment.clientId);
+        const clientName = client ? `${client.firstName} ${client.lastName}` : "Unknown";
+        const unit = client ? client.unitNumber : "N/A";
+        const notes = payment.notes ? payment.notes.replace(/,/g, ";") : "";
+        csvRows.push(`${new Date(payment.paymentDate).toLocaleDateString()},${clientName},${unit},$${payment.amount},${notes}`);
+      });
+    csvRows.push("");
+    
+    // Clients section
+    csvRows.push("CLIENTS");
+    csvRows.push("Name,Unit,Rent Amount,Status");
+    clients.forEach((client) => {
+      csvRows.push(`${client.firstName} ${client.lastName},${client.unitNumber},$${client.rentAmount},${client.status}`);
+    });
+    csvRows.push("");
+    
+    // Projects section
+    csvRows.push("PROJECTS");
+    csvRows.push("Name,External Client,Budget,Amount Paid,Remaining,Status");
+    projects.forEach((project) => {
+      const remaining = project.budget - project.amountPaid;
+      csvRows.push(`${project.name},${project.externalClient},$${project.budget},$${project.amountPaid},$${remaining},${project.status}`);
+    });
+    
+    // Create CSV blob and download
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `financial-report-${new Date().toISOString().split("T")[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="p-4 md:p-8">
-      <h1 className="text-3xl font-bold mb-6">Financial Dashboard</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Financial Dashboard</h1>
+        <button
+          onClick={exportToCSV}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+          <Download size={18} />
+          Export Report
+        </button>
+      </div>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -89,6 +179,29 @@ export default function FinancePage() {
           <p className="text-sm text-gray-500 mt-1">${totalProjectPaid.toLocaleString()} spent</p>
         </div>
       </div>
+
+      {/* Monthly Revenue Chart */}
+      {chartData.length > 0 && (
+        <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
+          <h2 className="text-xl font-bold mb-4">Monthly Revenue Trend</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="revenue" 
+                stroke="#10B981" 
+                strokeWidth={2}
+                name="Revenue"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* Recent Payments */}
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
