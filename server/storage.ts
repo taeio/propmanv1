@@ -18,7 +18,7 @@ import {
   type MaintenanceComment,
 } from "../shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -230,7 +230,7 @@ export class DatabaseStorage implements IStorage {
       .select({ issue: maintenanceIssues })
       .from(maintenanceIssues)
       .innerJoin(projects, eq(maintenanceIssues.projectId, projects.id))
-      .where(eq(projects.userId, userId))
+      .where(and(eq(projects.userId, userId), isNull(maintenanceIssues.deletedAt)))
       .then(rows => rows.map(row => row.issue));
   }
 
@@ -239,7 +239,7 @@ export class DatabaseStorage implements IStorage {
       .select({ issue: maintenanceIssues })
       .from(maintenanceIssues)
       .innerJoin(projects, eq(maintenanceIssues.projectId, projects.id))
-      .where(and(eq(maintenanceIssues.id, id), eq(projects.userId, userId)));
+      .where(and(eq(maintenanceIssues.id, id), eq(projects.userId, userId), isNull(maintenanceIssues.deletedAt)));
     return result?.issue;
   }
 

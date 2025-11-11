@@ -97,6 +97,7 @@ export const maintenanceIssues = pgTable("maintenance_issues", {
   createdBy: varchar("created_by").notNull().references(() => users.id),
   assignedTo: varchar("assigned_to").references(() => users.id),
   dueDate: timestamp("due_date"),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

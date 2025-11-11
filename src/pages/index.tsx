@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
   const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
   const activeIssues = maintenanceIssues
-    .filter((issue) => issue.status === "open" || issue.status === "in_progress")
+    .filter((issue) => !issue.deletedAt && (issue.status === "open" || issue.status === "in_progress"))
     .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 
   const getProjectName = (projectId: number) => {

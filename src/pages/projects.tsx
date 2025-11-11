@@ -56,6 +56,8 @@ export default function ProjectsPage() {
   });
   
   const [commentText, setCommentText] = useState("");
+  const [activeTab, setActiveTab] = useState<"projects" | "maintenance">("projects");
+  const maintenanceIssues = useAppStore((state) => state.maintenanceIssues);
 
   const resetForm = () => {
     setForm({
@@ -146,6 +148,19 @@ export default function ProjectsPage() {
     await addMaintenanceComment(selectedIssueId, commentText);
     setCommentText("");
   };
+
+  const handleStatusChange = async (issueId: number, newStatus: string) => {
+    if (newStatus === "closed" || newStatus === "resolved") {
+      await updateMaintenanceIssue(issueId, { 
+        status: newStatus,
+        deletedAt: new Date().toISOString()
+      } as any);
+      setIssueDetailModalOpen(false);
+      setIssuesModalOpen(true);
+    } else {
+      await updateMaintenanceIssue(issueId, { status: newStatus as any });
+    }
+  };
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -167,6 +182,11 @@ export default function ProjectsPage() {
     }
   };
 
+  const getProjectName = (projectId: number) => {
+    const project = projects.find(p => p.id === projectId);
+    return project?.name || "Unknown Project";
+  };
+
   // ✅ RETURN UI (this was missing)
   return (
   <div className="p-6">
@@ -186,7 +206,36 @@ export default function ProjectsPage() {
       </button>
     </div>
 
+    {/* Tabs */}
+    <div className="mb-6 border-b dark:border-gray-700">
+      <div className="flex gap-4">
+        <button
+          onClick={() => setActiveTab("projects")}
+          className={`pb-3 px-2 text-sm font-medium transition ${
+            activeTab === "projects"
+              ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+              : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+          }`}
+        >
+          <Briefcase className="w-4 h-4 inline mr-2" />
+          Projects
+        </button>
+        <button
+          onClick={() => setActiveTab("maintenance")}
+          className={`pb-3 px-2 text-sm font-medium transition ${
+            activeTab === "maintenance"
+              ? "border-b-2 border-purple-600 text-purple-600 dark:text-purple-400"
+              : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+          }`}
+        >
+          <Wrench className="w-4 h-4 inline mr-2" />
+          All Maintenance Issues
+        </button>
+      </div>
+    </div>
+
     {/* Projects List */}
+    {activeTab === "projects" && (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       {projects.map((project) => {
         const issues = getProjectIssues(project.id);
@@ -244,6 +293,47 @@ export default function ProjectsPage() {
         );
       })}
     </div>
+    )}
+
+    {/* Maintenance Tab */}
+    {activeTab === "maintenance" && (
+      <div className="space-y-4">
+        {maintenanceIssues.filter(issue => !issue.deletedAt).length === 0 ? (
+          <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+            No maintenance issues yet
+          </p>
+        ) : (
+          maintenanceIssues.filter(issue => !issue.deletedAt).map((issue) => (
+            <motion.div
+              key={issue.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => {
+                setSelectedProjectId(issue.projectId);
+                setSelectedIssueId(issue.id);
+                setIssueDetailModalOpen(true);
+              }}
+              className="p-4 border dark:border-gray-700 rounded-xl shadow bg-white dark:bg-gray-800 cursor-pointer hover:shadow-lg transition"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{issue.title}</h3>
+                <span className={`px-2 py-1 text-xs rounded-full text-white ${getStatusColor(issue.status)}`}>
+                  {issue.status.replace('_', ' ')}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{issue.description}</p>
+              <div className="flex gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <span className="font-semibold">Project: {getProjectName(issue.projectId)}</span>
+                <span className={`font-semibold ${getPriorityColor(issue.priority)}`}>
+                  {issue.priority.toUpperCase()}
+                </span>
+                <span>{issue.category}</span>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+    )}
 
     {/* Modal */}
     <AnimatePresence>
@@ -539,7 +629,7 @@ export default function ProjectsPage() {
                 <select
                   className="w-full p-2 border dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   value={issue.status}
-                  onChange={(e) => updateMaintenanceIssue(issue.id, { status: e.target.value as any })}
+                  onChange={(e) => handleStatusChange(issue.id, e.target.value)}
                 >
                   <option value="open">Open</option>
                   <option value="in_progress">In Progress</option>
