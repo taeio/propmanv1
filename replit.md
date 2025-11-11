@@ -66,10 +66,19 @@ Preferred communication style: Simple, everyday language.
 ### Tenant Dashboard (`/tenant`)
 - **Separate Interface**: Dedicated tenant-facing dashboard with distinct UI design (indigo color scheme vs. property manager's red/silver).
 - **Limited Functionality**: Tenants only have access to maintenance requests and settings (no access to projects, clients, finance, or notes).
+- **No Navigation Sidebar**: Tenants do not see the standard sidebar/topbar navigation - they have a simplified interface.
 - **Simplified Request Form**: Maintenance request form without manual priority selection - priority is automatically assigned based on issue description.
 - **Request Tracking**: View all submitted maintenance requests with status updates and comments from property managers.
 - **Settings Integration**: Full access to profile settings (name, email) and theme preferences.
 - **Real-time Updates**: View status changes and comments on maintenance requests in real-time.
+
+### Authentication & Authorization
+- **Role-Based Access Control**: Users are assigned roles ("property_manager" or "tenant") during signup that determine dashboard access.
+- **Route Protection**: All pages protected via HOC that validates authentication and role permissions.
+- **Navigation Visibility**: Sidebar/topbar only visible to authenticated property managers - hidden for unauthenticated users and tenants.
+- **Authentication Page**: Modern design with professional background image, backdrop blur effects, gradient elements, and responsive layout.
+- **Role Selection**: Clear role selector during signup with descriptions for property managers vs. tenants.
+- **Automatic Routing**: Users automatically redirected to role-appropriate dashboard after login (property managers to `/`, tenants to `/tenant`).
 
 ## External Dependencies
 
