@@ -11,7 +11,6 @@ function TenantDashboard() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
   const {
-    isAuthenticated,
     profile,
     projects,
     maintenanceIssues,
@@ -41,12 +40,6 @@ function TenantDashboard() {
     lastName: profile.lastName,
     email: profile.email,
   });
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/auth");
-    }
-  }, [isAuthenticated, router]);
 
   useEffect(() => {
     setEditForm({
@@ -124,7 +117,7 @@ function TenantDashboard() {
     }
   };
 
-  if (!isAuthenticated || isLoading) return null;
+  if (isLoading) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
