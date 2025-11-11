@@ -32,7 +32,9 @@ Preferred communication style: Simple, everyday language.
 - **Clients**: `id`, `firstName`, `lastName`, `unitNumber`, `rentAmount`, `status`.
 - **Notes**: `id`, `text`, `category`.
 - **Payments**: `id`, `clientId`, `amount`, `paymentDate`, `notes`, `userId` (multi-tenant).
-- **Users**: `id`, `username`, `firstName`, `lastName`, `email`, `themePreference`, `createdAt`.
+- **Users**: `id`, `username`, `firstName`, `lastName`, `email`, `role`, `themePreference`, `createdAt`.
+- **Maintenance Issues**: `id`, `projectId`, `title`, `description`, `status`, `priority`, `category`, `createdBy`, `assignedTo`, `dueDate`.
+- **Maintenance Comments**: `id`, `issueId`, `userId`, `comment`, `createdAt`.
 
 ### Financial Dashboard Features
 - **Metrics**: Total Rent Collected, Outstanding Balance, Project Budget Tracking.
@@ -44,6 +46,17 @@ Preferred communication style: Simple, everyday language.
 - **User Profile Management**: Editable `firstName`, `lastName`, `email` with database persistence.
 - **Theme Toggle**: Light/dark mode support persisted in localStorage and database.
 - **Authentication Gate**: Prompts for login if unauthenticated, enables editing when logged in.
+
+### Maintenance Issue Tracking Features
+- **Multi-Role Communication**: Enables tenants, property managers/assistants, and maintenance workers to communicate on project maintenance issues.
+- **Issue Management**: Create, view, and track maintenance issues per project with status tracking (open, in_progress, resolved, closed).
+- **Priority System**: Four priority levels (low, medium, high, urgent) with color-coded badges.
+- **Category Organization**: Six predefined categories (plumbing, electrical, HVAC, appliance, structural, other).
+- **Comments Thread**: Real-time comment system for multi-party communication on each issue.
+- **Issue Badges**: Visual indicators on project cards showing count of open/in-progress issues.
+- **Modal-Based UI**: Three-modal workflow (issue list, add issue, issue detail with comments).
+- **Assignment Tracking**: Support for assigning issues to specific users with optional due dates.
+- **Full Dark Mode**: Complete dark mode support across all maintenance modals and components.
 
 ## External Dependencies
 
