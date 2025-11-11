@@ -26,6 +26,12 @@ export default async function handler(
 
     if (req.method === "POST") {
       const commentData = req.body;
+      
+      const issue = await storage.getMaintenanceIssue(commentData.issueId, userId);
+      if (!issue) {
+        return res.status(403).json({ message: "Forbidden: Issue not found or access denied" });
+      }
+      
       const comment = await storage.createMaintenanceComment({
         ...commentData,
         userId,

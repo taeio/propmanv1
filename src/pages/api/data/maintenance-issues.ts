@@ -25,6 +25,12 @@ export default async function handler(
 
     if (req.method === "POST") {
       const issueData = req.body;
+      
+      const project = await storage.getProject(issueData.projectId, userId);
+      if (!project) {
+        return res.status(403).json({ message: "Forbidden: Project not found or access denied" });
+      }
+      
       const issue = await storage.createMaintenanceIssue({
         ...issueData,
         createdBy: userId,

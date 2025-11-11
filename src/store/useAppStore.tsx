@@ -34,6 +34,29 @@ type Payment = {
   notes?: string;
 };
 
+type MaintenanceIssue = {
+  id: number;
+  projectId: number;
+  title: string;
+  description: string;
+  status: "open" | "in_progress" | "resolved" | "closed";
+  priority: "low" | "medium" | "high" | "urgent";
+  category: "plumbing" | "electrical" | "hvac" | "appliance" | "structural" | "other";
+  createdBy: string;
+  assignedTo?: string | null;
+  dueDate?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+type MaintenanceComment = {
+  id: number;
+  issueId: number;
+  userId: string;
+  comment: string;
+  createdAt?: string;
+};
+
 type UserProfile = {
   firstName: string;
   lastName: string;
@@ -47,6 +70,8 @@ type AppStore = {
   clients: Client[];
   notes: Note[];
   payments: Payment[];
+  maintenanceIssues: MaintenanceIssue[];
+  maintenanceComments: MaintenanceComment[];
   isAuthenticated: boolean;
   isSyncing: boolean;
   profile: UserProfile;
@@ -82,6 +107,17 @@ type AppStore = {
   updatePayment: (id: number, data: Partial<Payment>) => Promise<void>;
   deletePayment: (id: number) => Promise<void>;
   getClientPayments: (clientId: number) => Payment[];
+
+  // --- Maintenance Issues ---
+  addMaintenanceIssue: (data: Omit<MaintenanceIssue, "id" | "createdBy" | "createdAt" | "updatedAt">) => Promise<void>;
+  updateMaintenanceIssue: (id: number, data: Partial<MaintenanceIssue>) => Promise<void>;
+  deleteMaintenanceIssue: (id: number) => Promise<void>;
+  getProjectIssues: (projectId: number) => MaintenanceIssue[];
+
+  // --- Maintenance Comments ---
+  addMaintenanceComment: (issueId: number, comment: string) => Promise<void>;
+  deleteMaintenanceComment: (id: number) => Promise<void>;
+  getIssueComments: (issueId: number) => MaintenanceComment[];
 };
 
 const STORAGE_KEY = "taeio-dashboard-storage-v2";
@@ -114,6 +150,8 @@ export const useAppStore = create<AppStore>()(
       clients: [],
       notes: [],
       payments: [],
+      maintenanceIssues: [],
+      maintenanceComments: [],
       isAuthenticated: false,
       isSyncing: false,
       profile: {
@@ -135,11 +173,12 @@ export const useAppStore = create<AppStore>()(
 
         set({ isSyncing: true });
         try {
-          const [clients, projects, notes, payments] = await Promise.all([
+          const [clients, projects, notes, payments, maintenanceIssues] = await Promise.all([
             fetch("/api/data/clients").then((r) => r.ok ? r.json() : []),
             fetch("/api/data/projects").then((r) => r.ok ? r.json() : []),
             fetch("/api/data/notes").then((r) => r.ok ? r.json() : []),
             fetch("/api/data/payments").then((r) => r.ok ? r.json() : []),
+            fetch("/api/data/maintenance-issues").then((r) => r.ok ? r.json() : []),
           ]);
 
           const markSynced = (items: any[]) => items.map((item) => ({ ...item, _synced: true }));
@@ -147,7 +186,8 @@ export const useAppStore = create<AppStore>()(
             clients: markSynced(clients), 
             projects: markSynced(projects), 
             notes: markSynced(notes),
-            payments: markSynced(payments)
+            payments: markSynced(payments),
+            maintenanceIssues: markSynced(maintenanceIssues)
           });
         } catch (error) {
           console.error("Failed to sync with database:", error);
@@ -574,6 +614,122 @@ export const useAppStore = create<AppStore>()(
       getClientPayments: (clientId) => {
         return get().payments.filter((p) => p.clientId === clientId);
       },
+
+      // --- Maintenance Issues ---
+      addMaintenanceIssue: async (data) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          const response = await fetch("/api/data/maintenance-issues", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const issue = await response.json();
+          set((state) => ({ maintenanceIssues: [...state.maintenanceIssues, { ...issue, _synced: true }] }));
+        } else {
+          set((state) => ({
+            maintenanceIssues: [...state.maintenanceIssues, { id: Date.now(), createdBy: "offline", ...data }],
+          }));
+        }
+      },
+
+      updateMaintenanceIssue: async (id, data) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          const response = await fetch("/api/data/maintenance-issues", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, ...data }),
+          });
+          const issue = await response.json();
+          set((state) => ({
+            maintenanceIssues: state.maintenanceIssues.map((i) => i.id === id ? { ...issue, _synced: true } : i),
+          }));
+        } else {
+          set((state) => ({
+            maintenanceIssues: state.maintenanceIssues.map((i) =>
+              i.id === id ? { ...i, ...data, _synced: false } : i
+            ),
+          }));
+        }
+      },
+
+      deleteMaintenanceIssue: async (id) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          await fetch(`/api/data/maintenance-issues?id=${id}`, { method: "DELETE" });
+          set((state) => ({
+            maintenanceIssues: state.maintenanceIssues.filter((i) => i.id !== id),
+            maintenanceComments: state.maintenanceComments.filter((c) => c.issueId !== id),
+          }));
+        } else {
+          const issue = get().maintenanceIssues.find((i) => i.id === id);
+          if ((issue as any)?._synced) {
+            set((state) => ({
+              maintenanceIssues: state.maintenanceIssues.map((i) => 
+                i.id === id ? { ...i, _synced: false, _deleted: true } as any : i
+              ),
+            }));
+          } else {
+            set((state) => ({
+              maintenanceIssues: state.maintenanceIssues.filter((i) => i.id !== id),
+            }));
+          }
+        }
+      },
+
+      getProjectIssues: (projectId) => {
+        return get().maintenanceIssues.filter((i) => i.projectId === projectId);
+      },
+
+      // --- Maintenance Comments ---
+      addMaintenanceComment: async (issueId, comment) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          const response = await fetch("/api/data/maintenance-comments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ issueId, comment }),
+          });
+          const newComment = await response.json();
+          set((state) => ({ 
+            maintenanceComments: [...state.maintenanceComments, { ...newComment, _synced: true }] 
+          }));
+        } else {
+          set((state) => ({
+            maintenanceComments: [...state.maintenanceComments, { 
+              id: Date.now(), 
+              issueId, 
+              userId: "offline", 
+              comment,
+              createdAt: new Date().toISOString()
+            }],
+          }));
+        }
+      },
+
+      deleteMaintenanceComment: async (id) => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          await fetch(`/api/data/maintenance-comments?id=${id}`, { method: "DELETE" });
+          set((state) => ({
+            maintenanceComments: state.maintenanceComments.filter((c) => c.id !== id),
+          }));
+        } else {
+          set((state) => ({
+            maintenanceComments: state.maintenanceComments.filter((c) => c.id !== id),
+          }));
+        }
+      },
+
+      getIssueComments: (issueId) => {
+        return get().maintenanceComments.filter((c) => c.issueId === issueId);
+      },
     }),
     {
       name: STORAGE_KEY,
@@ -584,6 +740,8 @@ export const useAppStore = create<AppStore>()(
         clients: state.clients,
         notes: state.notes,
         payments: state.payments,
+        maintenanceIssues: state.maintenanceIssues,
+        maintenanceComments: state.maintenanceComments,
       }),
     }
   )
