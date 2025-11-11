@@ -6,12 +6,16 @@ import {
   projects,
   notes,
   payments,
+  maintenanceIssues,
+  maintenanceComments,
   type User,
   type UpsertUser,
   type Client,
   type Project,
   type Note,
   type Payment,
+  type MaintenanceIssue,
+  type MaintenanceComment,
 } from "../shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -46,6 +50,16 @@ export interface IStorage {
   createPayment(payment: Omit<Payment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Payment>;
   updatePayment(id: number, userId: string, data: Partial<Payment>): Promise<Payment | undefined>;
   deletePayment(id: number, userId: string): Promise<void>;
+  
+  getMaintenanceIssues(userId: string): Promise<MaintenanceIssue[]>;
+  getMaintenanceIssue(id: number, userId: string): Promise<MaintenanceIssue | undefined>;
+  createMaintenanceIssue(issue: Omit<MaintenanceIssue, 'id' | 'createdAt' | 'updatedAt'>): Promise<MaintenanceIssue>;
+  updateMaintenanceIssue(id: number, userId: string, data: Partial<MaintenanceIssue>): Promise<MaintenanceIssue | undefined>;
+  deleteMaintenanceIssue(id: number, userId: string): Promise<void>;
+  
+  getMaintenanceComments(issueId: number, userId: string): Promise<MaintenanceComment[]>;
+  createMaintenanceComment(comment: Omit<MaintenanceComment, 'id' | 'createdAt'>): Promise<MaintenanceComment>;
+  deleteMaintenanceComment(id: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -209,6 +223,75 @@ export class DatabaseStorage implements IStorage {
 
   async deletePayment(id: number, userId: string): Promise<void> {
     await db.delete(payments).where(and(eq(payments.id, id), eq(payments.userId, userId)));
+  }
+
+  async getMaintenanceIssues(userId: string): Promise<MaintenanceIssue[]> {
+    return db
+      .select({ issue: maintenanceIssues })
+      .from(maintenanceIssues)
+      .innerJoin(projects, eq(maintenanceIssues.projectId, projects.id))
+      .where(eq(projects.userId, userId))
+      .then(rows => rows.map(row => row.issue));
+  }
+
+  async getMaintenanceIssue(id: number, userId: string): Promise<MaintenanceIssue | undefined> {
+    const [result] = await db
+      .select({ issue: maintenanceIssues })
+      .from(maintenanceIssues)
+      .innerJoin(projects, eq(maintenanceIssues.projectId, projects.id))
+      .where(and(eq(maintenanceIssues.id, id), eq(projects.userId, userId)));
+    return result?.issue;
+  }
+
+  async createMaintenanceIssue(issueData: Omit<MaintenanceIssue, 'id' | 'createdAt' | 'updatedAt'>): Promise<MaintenanceIssue> {
+    const [issue] = await db.insert(maintenanceIssues).values(issueData as any).returning();
+    return issue;
+  }
+
+  async updateMaintenanceIssue(id: number, userId: string, data: Partial<MaintenanceIssue>): Promise<MaintenanceIssue | undefined> {
+    const issue = await this.getMaintenanceIssue(id, userId);
+    if (!issue) return undefined;
+    
+    const [updated] = await db
+      .update(maintenanceIssues)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(maintenanceIssues.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteMaintenanceIssue(id: number, userId: string): Promise<void> {
+    const issue = await this.getMaintenanceIssue(id, userId);
+    if (!issue) return;
+    
+    await db.delete(maintenanceComments).where(eq(maintenanceComments.issueId, id));
+    await db.delete(maintenanceIssues).where(eq(maintenanceIssues.id, id));
+  }
+
+  async getMaintenanceComments(issueId: number, userId: string): Promise<MaintenanceComment[]> {
+    const issue = await this.getMaintenanceIssue(issueId, userId);
+    if (!issue) return [];
+    
+    return db.select().from(maintenanceComments).where(eq(maintenanceComments.issueId, issueId));
+  }
+
+  async createMaintenanceComment(commentData: Omit<MaintenanceComment, 'id' | 'createdAt'>): Promise<MaintenanceComment> {
+    const [comment] = await db.insert(maintenanceComments).values(commentData as any).returning();
+    return comment;
+  }
+
+  async deleteMaintenanceComment(id: number, userId: string): Promise<void> {
+    const [comment] = await db
+      .select()
+      .from(maintenanceComments)
+      .where(eq(maintenanceComments.id, id));
+    
+    if (comment) {
+      const issue = await this.getMaintenanceIssue(comment.issueId, userId);
+      if (issue) {
+        await db.delete(maintenanceComments).where(eq(maintenanceComments.id, id));
+      }
+    }
   }
 }
 

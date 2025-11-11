@@ -31,6 +31,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  role: varchar("role").notNull().default("manager"),
   themePreference: varchar("theme_preference").default("light"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -88,13 +89,14 @@ export const payments = pgTable("payments", {
 export const maintenanceIssues = pgTable("maintenance_issues", {
   id: serial("id").primaryKey(),
   projectId: integer("project_id").notNull().references(() => projects.id),
-  userId: varchar("user_id").notNull().references(() => users.id),
   title: varchar("title").notNull(),
   description: varchar("description").notNull(),
   status: varchar("status").notNull().default("open"),
   priority: varchar("priority").notNull().default("medium"),
   category: varchar("category").notNull().default("other"),
   createdBy: varchar("created_by").notNull().references(() => users.id),
+  assignedTo: varchar("assigned_to").references(() => users.id),
+  dueDate: timestamp("due_date"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
