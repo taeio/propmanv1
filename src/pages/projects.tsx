@@ -530,7 +530,23 @@ export default function ProjectsPage() {
                 </button>
               </div>
 
-              <p className="text-gray-700 dark:text-gray-300 mb-6">{issue.description}</p>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">{issue.description}</p>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Update Status
+                </label>
+                <select
+                  className="w-full p-2 border dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  value={issue.status}
+                  onChange={(e) => updateMaintenanceIssue(issue.id, { status: e.target.value as any })}
+                >
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
 
               <div className="border-t dark:border-gray-700 pt-4">
                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-900 dark:text-gray-100">
