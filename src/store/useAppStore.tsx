@@ -683,7 +683,7 @@ export const useAppStore = create<AppStore>()(
       },
 
       getProjectIssues: (projectId) => {
-        return get().maintenanceIssues.filter((i) => i.projectId === projectId);
+        return get().maintenanceIssues.filter((i) => i.projectId === projectId && !i.deletedAt);
       },
 
       // --- Maintenance Comments ---
