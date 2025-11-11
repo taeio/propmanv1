@@ -84,6 +84,30 @@ export const payments = pgTable("payments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Maintenance Issues table
+export const maintenanceIssues = pgTable("maintenance_issues", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: varchar("title").notNull(),
+  description: varchar("description").notNull(),
+  status: varchar("status").notNull().default("open"),
+  priority: varchar("priority").notNull().default("medium"),
+  category: varchar("category").notNull().default("other"),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Maintenance Comments table
+export const maintenanceComments = pgTable("maintenance_comments", {
+  id: serial("id").primaryKey(),
+  issueId: integer("issue_id").notNull().references(() => maintenanceIssues.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  comment: varchar("comment").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Type exports
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -91,3 +115,5 @@ export type Project = typeof projects.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type Note = typeof notes.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
+export type MaintenanceIssue = typeof maintenanceIssues.$inferSelect;
+export type MaintenanceComment = typeof maintenanceComments.$inferSelect;
