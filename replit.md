@@ -23,7 +23,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 - **Database**: PostgreSQL with Drizzle ORM for multi-tenant data storage and session management.
-- **Authentication**: Replit OAuth via Passport.js with OpenID Connect strategy and PostgreSQL session store.
+- **Authentication**: Custom username/password authentication via Passport.js LocalStrategy with scrypt password hashing and PostgreSQL session store.
 - **Multi-tenancy**: All data (clients, projects, notes, payments) is isolated per user via `userId` foreign keys.
 - **Data Synchronization**: A hybrid approach where data is managed in localStorage when offline/logged out, and seamlessly synchronized with the PostgreSQL database when authenticated. Offline changes (creates, updates, deletes) are tracked and reconciled upon re-authentication.
 
