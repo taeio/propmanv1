@@ -45,6 +45,7 @@ type MaintenanceIssue = {
   createdBy: string;
   assignedTo?: string | null;
   dueDate?: string | null;
+  deletedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };
