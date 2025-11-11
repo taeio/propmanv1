@@ -9,10 +9,10 @@ const Topbar = dynamic(() => import("./Topbar"), { ssr: false });
 
 export default function Layout({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   
   const userRole = user?.role || "property_manager";
-  const showNavigation = userRole === "property_manager";
+  const showNavigation = !isLoading && userRole === "property_manager";
   
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
