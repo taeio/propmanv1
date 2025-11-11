@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { DollarSign, TrendingUp, CreditCard, AlertCircle, Download } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { withRoleProtection } from "@/hoc/withRoleProtection";
 
-export default function FinancePage() {
+function FinancePage() {
   const { clients, projects, payments } = useAppStore();
   const [mounted, setMounted] = useState(false);
 
@@ -319,3 +320,4 @@ export default function FinancePage() {
     </div>
   );
 }
+export default withRoleProtection(FinancePage, "property_manager");

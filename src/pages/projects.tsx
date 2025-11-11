@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import Layout from "@/components/Layout";
 import { useAppStore } from "@/store/useAppStore";
 import { useRouter } from "next/router";
+import { withRoleProtection } from "@/hoc/withRoleProtection";
 
 type ProjectStatus = "In Progress" | "Completed" | "Pending";
 
-export default function ProjectsPage() {
+function ProjectsPage() {
   const router = useRouter();
   const projects = useAppStore((state) => state.projects);
   const addProject = useAppStore((state) => state.addProject);
@@ -683,3 +684,4 @@ export default function ProjectsPage() {
 
 }
 
+export default withRoleProtection(ProjectsPage, "property_manager");

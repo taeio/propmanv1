@@ -5,8 +5,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wrench, Settings, LogOut, User, Moon, Sun } from "lucide-react";
 import { assignPriorityFromMessage } from "@/utils/priorityAssignment";
+import { withRoleProtection } from "@/hoc/withRoleProtection";
 
-export default function TenantDashboard() {
+function TenantDashboard() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
   const {
@@ -544,3 +545,4 @@ export default function TenantDashboard() {
     </div>
   );
 }
+export default withRoleProtection(TenantDashboard, "tenant");

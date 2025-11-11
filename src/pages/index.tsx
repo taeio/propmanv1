@@ -4,8 +4,9 @@ import { Briefcase, Users, DollarSign, ClipboardList, Wrench, AlertCircle } from
 import { motion } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
 import { useRouter } from "next/router";
+import { withRoleProtection } from "@/hoc/withRoleProtection";
 
-export default function DashboardPage() {
+function DashboardPage() {
   const router = useRouter();
   const projects = useAppStore((state) => state.projects);
   const clients = useAppStore((state) => state.clients);
@@ -292,4 +293,4 @@ function StatCard({
   );
 }
 
-
+export default withRoleProtection(DashboardPage, "property_manager");

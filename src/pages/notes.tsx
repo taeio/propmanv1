@@ -4,10 +4,11 @@ import { Plus, Trash, Edit } from "lucide-react";
 import { motion } from "framer-motion";
 import Layout from "@/components/Layout";
 import { useAppStore } from "@/store/useAppStore";
+import { withRoleProtection } from "@/hoc/withRoleProtection";
 
 type NoteCategory = "client" | "project" | "finance" | "maintenance";
 
-export default function NotesPage() {
+function NotesPage() {
   const notes = useAppStore(state => state.notes);
   const addNote = useAppStore(state => state.addNote);
   const updateNote = useAppStore(state => state.updateNote);
@@ -157,3 +158,4 @@ export default function NotesPage() {
   );
 }
 
+export default withRoleProtection(NotesPage, "property_manager");

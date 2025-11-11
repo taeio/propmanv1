@@ -3,10 +3,11 @@ import React, { useState } from "react";
 import { Users, Plus, Trash, Edit, DollarSign } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
+import { withRoleProtection } from "@/hoc/withRoleProtection";
 
 type RentStatus = "Paid" | "Late" | "Due";
 
-export default function ClientsPage() {
+function ClientsPage() {
   const clients = useAppStore((s) => s.clients);
   const addClient = useAppStore((s) => s.addClient);
   const updateClient = useAppStore((s) => s.updateClient);
@@ -390,3 +391,4 @@ export default function ClientsPage() {
     </div>
   );
 }
+export default withRoleProtection(ClientsPage, "property_manager");

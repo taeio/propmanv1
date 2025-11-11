@@ -3,8 +3,9 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Cog, Moon, Sun, Save } from "lucide-react";
 import { useAppStore } from "../store/useAppStore";
+import { withRoleProtection } from "@/hoc/withRoleProtection";
 
-export default function SettingsPage() {
+function SettingsPage() {
   const { profile, isAuthenticated, updateProfile, saveProfile, setTheme } = useAppStore();
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -162,3 +163,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+export default withRoleProtection(SettingsPage, "both");
