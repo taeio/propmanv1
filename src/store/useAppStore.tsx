@@ -34,6 +34,14 @@ type Payment = {
   notes?: string;
 };
 
+type UserProfile = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  themePreference: "light" | "dark";
+  isDirty: boolean;
+};
+
 type AppStore = {
   projects: Project[];
   clients: Client[];
@@ -41,11 +49,18 @@ type AppStore = {
   payments: Payment[];
   isAuthenticated: boolean;
   isSyncing: boolean;
+  profile: UserProfile;
 
   // --- Auth & Sync ---
   setAuthenticated: (isAuth: boolean) => void;
   syncWithDatabase: () => Promise<void>;
   migrateLocalDataToDatabase: () => Promise<void>;
+
+  // --- Profile ---
+  loadProfile: () => Promise<void>;
+  updateProfile: (data: Partial<Omit<UserProfile, "isDirty">>) => void;
+  saveProfile: () => Promise<void>;
+  setTheme: (theme: "light" | "dark") => void;
 
   // --- Projects ---
   addProject: (data: Omit<Project, "id">) => Promise<void>;
@@ -101,6 +116,13 @@ export const useAppStore = create<AppStore>()(
       payments: [],
       isAuthenticated: false,
       isSyncing: false,
+      profile: {
+        firstName: "",
+        lastName: "",
+        email: "",
+        themePreference: (typeof window !== "undefined" && localStorage.getItem("theme") === "dark") ? "dark" : "light",
+        isDirty: false,
+      },
 
       // --- Auth & Sync ---
       setAuthenticated: (isAuth) => {
@@ -190,6 +212,102 @@ export const useAppStore = create<AppStore>()(
           await get().syncWithDatabase();
         } catch (error) {
           console.error("Failed to migrate data to database:", error);
+        }
+      },
+
+      // --- Profile ---
+      loadProfile: async () => {
+        const { isAuthenticated } = get();
+        
+        if (isAuthenticated) {
+          try {
+            const response = await fetch("/api/user/profile");
+            if (response.ok) {
+              const userData = await response.json();
+              set((state) => ({
+                profile: {
+                  firstName: userData.firstName || "",
+                  lastName: userData.lastName || "",
+                  email: userData.email || "",
+                  themePreference: userData.themePreference || state.profile.themePreference,
+                  isDirty: false,
+                },
+              }));
+              if (userData.themePreference && typeof window !== "undefined") {
+                localStorage.setItem("theme", userData.themePreference);
+                if (userData.themePreference === "dark") {
+                  document.documentElement.classList.add("dark");
+                } else {
+                  document.documentElement.classList.remove("dark");
+                }
+              }
+            }
+          } catch (error) {
+            console.error("Failed to load profile:", error);
+          }
+        }
+      },
+
+      updateProfile: (data) => {
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            ...data,
+            isDirty: true,
+          },
+        }));
+      },
+
+      saveProfile: async () => {
+        const { profile, isAuthenticated } = get();
+        if (!isAuthenticated) return;
+
+        if (!profile.firstName || !profile.lastName || !profile.email) {
+          console.warn("Cannot save profile with empty required fields");
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/user/profile", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              firstName: profile.firstName,
+              lastName: profile.lastName,
+              email: profile.email,
+              themePreference: profile.themePreference,
+            }),
+          });
+
+          if (response.ok) {
+            set((state) => ({
+              profile: {
+                ...state.profile,
+                isDirty: false,
+              },
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to save profile:", error);
+        }
+      },
+
+      setTheme: (theme) => {
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            themePreference: theme,
+            isDirty: true,
+          },
+        }));
+        
+        if (typeof window !== "undefined") {
+          localStorage.setItem("theme", theme);
+          if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
         }
       },
 

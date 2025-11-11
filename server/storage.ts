@@ -19,6 +19,7 @@ import { eq, and } from "drizzle-orm";
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  updateUserProfile(id: string, data: Partial<User>): Promise<User | undefined>;
   
   getClients(userId: string): Promise<Client[]>;
   getClient(id: number, userId: string): Promise<Client | undefined>;
@@ -62,6 +63,18 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date(),
         },
       })
+      .returning();
+    return user;
+  }
+
+  async updateUserProfile(id: string, data: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
       .returning();
     return user;
   }

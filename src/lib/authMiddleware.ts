@@ -28,3 +28,21 @@ export function initAuth(req: NextApiRequest, res: NextApiResponse): Promise<voi
 // Serialize/deserialize user for passport
 passport.serializeUser((user: Express.User, cb) => cb(null, user));
 passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+
+// Helper function to require authentication in API routes
+export async function requireAuth(req: NextApiRequest, res: NextApiResponse): Promise<{ id: string } | null> {
+  await initAuth(req, res);
+  
+  if (!(req as any).isAuthenticated || !(req as any).isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return null;
+  }
+
+  const userId = (req as any).user?.claims?.sub;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return null;
+  }
+  
+  return { id: userId };
+}
