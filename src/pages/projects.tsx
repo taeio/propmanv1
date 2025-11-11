@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Briefcase, Plus, Trash, Edit } from "lucide-react";
+import { Briefcase, Plus, Trash, Edit, Wrench, MessageSquare, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Layout from "@/components/Layout";
 import { useAppStore } from "@/store/useAppStore";
@@ -12,9 +12,22 @@ export default function ProjectsPage() {
   const addProject = useAppStore((state) => state.addProject);
   const updateProject = useAppStore((state) => state.updateProject);
   const deleteProject = useAppStore((state) => state.deleteProject);
+  
+  const getProjectIssues = useAppStore((state) => state.getProjectIssues);
+  const addMaintenanceIssue = useAppStore((state) => state.addMaintenanceIssue);
+  const updateMaintenanceIssue = useAppStore((state) => state.updateMaintenanceIssue);
+  const deleteMaintenanceIssue = useAppStore((state) => state.deleteMaintenanceIssue);
+  const getIssueComments = useAppStore((state) => state.getIssueComments);
+  const addMaintenanceComment = useAppStore((state) => state.addMaintenanceComment);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
+  
+  const [issuesModalOpen, setIssuesModalOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [addIssueModalOpen, setAddIssueModalOpen] = useState(false);
+  const [issueDetailModalOpen, setIssueDetailModalOpen] = useState(false);
+  const [selectedIssueId, setSelectedIssueId] = useState<number | null>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -23,6 +36,15 @@ export default function ProjectsPage() {
     amountPaid: "",
     status: "In Progress" as ProjectStatus,
   });
+  
+  const [issueForm, setIssueForm] = useState({
+    title: "",
+    description: "",
+    priority: "medium" as "low" | "medium" | "high" | "urgent",
+    category: "other" as "plumbing" | "electrical" | "hvac" | "appliance" | "structural" | "other",
+  });
+  
+  const [commentText, setCommentText] = useState("");
 
   const resetForm = () => {
     setForm({
@@ -68,6 +90,71 @@ export default function ProjectsPage() {
     resetForm();
     setModalOpen(false);
   };
+  
+  const openIssuesModal = (projectId: number) => {
+    setSelectedProjectId(projectId);
+    setIssuesModalOpen(true);
+  };
+  
+  const openAddIssueModal = () => {
+    setAddIssueModalOpen(true);
+  };
+  
+  const handleAddIssue = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!issueForm.title || !selectedProjectId) return;
+    
+    await addMaintenanceIssue({
+      projectId: selectedProjectId,
+      title: issueForm.title,
+      description: issueForm.description,
+      priority: issueForm.priority,
+      category: issueForm.category,
+      status: "open",
+    });
+    
+    setIssueForm({
+      title: "",
+      description: "",
+      priority: "medium",
+      category: "other",
+    });
+    setAddIssueModalOpen(false);
+  };
+  
+  const openIssueDetail = (issueId: number) => {
+    setSelectedIssueId(issueId);
+    setIssuesModalOpen(false);
+    setIssueDetailModalOpen(true);
+  };
+  
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText || !selectedIssueId) return;
+    
+    await addMaintenanceComment(selectedIssueId, commentText);
+    setCommentText("");
+  };
+  
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "open": return "bg-red-500 dark:bg-red-600";
+      case "in_progress": return "bg-yellow-500 dark:bg-yellow-600";
+      case "resolved": return "bg-green-500 dark:bg-green-600";
+      case "closed": return "bg-gray-500 dark:bg-gray-600";
+      default: return "bg-gray-500 dark:bg-gray-600";
+    }
+  };
+  
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "urgent": return "text-red-600 dark:text-red-400";
+      case "high": return "text-orange-600 dark:text-orange-400";
+      case "medium": return "text-yellow-600 dark:text-yellow-400";
+      case "low": return "text-green-600 dark:text-green-400";
+      default: return "text-gray-600 dark:text-gray-400";
+    }
+  };
 
   // ✅ RETURN UI (this was missing)
   return (
@@ -90,15 +177,28 @@ export default function ProjectsPage() {
 
     {/* Projects List */}
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      {projects.map((project) => (
+      {projects.map((project) => {
+        const issues = getProjectIssues(project.id);
+        const openIssues = issues.filter(i => i.status === "open" || i.status === "in_progress");
+        
+        return (
         <motion.div
           key={project.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="p-4 border dark:border-gray-700 rounded-xl shadow bg-white dark:bg-gray-800"
         >
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{project.name}</h2>
-          <p className="text-gray-600 dark:text-gray-300">{project.externalClient}</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{project.name}</h2>
+              <p className="text-gray-600 dark:text-gray-300">{project.externalClient}</p>
+            </div>
+            {openIssues.length > 0 && (
+              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
+                {openIssues.length} {openIssues.length === 1 ? 'Issue' : 'Issues'}
+              </span>
+            )}
+          </div>
 
           <div className="mt-3 text-sm text-gray-700 dark:text-gray-300">
             <p>Budget: ${project.budget}</p>
@@ -106,7 +206,15 @@ export default function ProjectsPage() {
             <p>Status: {project.status}</p>
           </div>
 
-          <div className="flex gap-3 mt-4">
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => openIssuesModal(project.id)}
+              className="flex items-center gap-1 px-3 py-2 rounded bg-purple-500 dark:bg-purple-600 text-white hover:bg-purple-600 dark:hover:bg-purple-500 text-sm"
+            >
+              <Wrench className="w-4 h-4" />
+              Maintenance
+            </button>
+            
             <button
               onClick={() => openEditModal(project)}
               className="p-2 rounded bg-yellow-400 dark:bg-yellow-600 text-white hover:bg-yellow-500 dark:hover:bg-yellow-500"
@@ -122,7 +230,8 @@ export default function ProjectsPage() {
             </button>
           </div>
         </motion.div>
-      ))}
+        );
+      })}
     </div>
 
     {/* Modal */}
@@ -217,6 +326,240 @@ export default function ProjectsPage() {
           </motion.form>
         </motion.div>
       )}
+    </AnimatePresence>
+
+    {/* Issues List Modal */}
+    <AnimatePresence>
+      {issuesModalOpen && selectedProjectId !== null && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 dark:bg-black/70 flex justify-center items-center p-4 z-50"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Maintenance Issues</h2>
+              <button
+                onClick={() => setIssuesModalOpen(false)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              >
+                <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              </button>
+            </div>
+
+            <button
+              onClick={openAddIssueModal}
+              className="w-full mb-4 px-4 py-2 rounded-xl bg-purple-600 dark:bg-purple-700 text-white flex items-center justify-center gap-2 hover:bg-purple-700 dark:hover:bg-purple-600"
+            >
+              <Plus className="w-5 h-5" />
+              Add Issue
+            </button>
+
+            <div className="space-y-3">
+              {getProjectIssues(selectedProjectId).map((issue) => (
+                <div
+                  key={issue.id}
+                  onClick={() => openIssueDetail(issue.id)}
+                  className="p-4 border dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">{issue.title}</h3>
+                    <span className={`px-2 py-1 text-xs rounded-full text-white ${getStatusColor(issue.status)}`}>
+                      {issue.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{issue.description}</p>
+                  <div className="flex gap-3 mt-2 text-xs">
+                    <span className={`font-semibold ${getPriorityColor(issue.priority)}`}>
+                      {issue.priority.toUpperCase()}
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      {issue.category}
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      {getIssueComments(issue.id).length} comments
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {getProjectIssues(selectedProjectId).length === 0 && (
+                <p className="text-center text-gray-500 dark:text-gray-400 py-8">No maintenance issues yet</p>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* Add Issue Modal */}
+    <AnimatePresence>
+      {addIssueModalOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 dark:bg-black/70 flex justify-center items-center p-4 z-50"
+        >
+          <motion.form
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            onSubmit={handleAddIssue}
+            className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-md space-y-4"
+          >
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">New Maintenance Issue</h2>
+
+            <input
+              className="w-full p-2 border dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              placeholder="Issue Title"
+              value={issueForm.title}
+              onChange={(e) => setIssueForm((f) => ({ ...f, title: e.target.value }))}
+              required
+            />
+
+            <textarea
+              className="w-full p-2 border dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              placeholder="Description"
+              rows={4}
+              value={issueForm.description}
+              onChange={(e) => setIssueForm((f) => ({ ...f, description: e.target.value }))}
+              required
+            />
+
+            <select
+              className="w-full p-2 border dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              value={issueForm.priority}
+              onChange={(e) => setIssueForm((f) => ({ ...f, priority: e.target.value as any }))}
+            >
+              <option value="low">Low Priority</option>
+              <option value="medium">Medium Priority</option>
+              <option value="high">High Priority</option>
+              <option value="urgent">Urgent</option>
+            </select>
+
+            <select
+              className="w-full p-2 border dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              value={issueForm.category}
+              onChange={(e) => setIssueForm((f) => ({ ...f, category: e.target.value as any }))}
+            >
+              <option value="plumbing">Plumbing</option>
+              <option value="electrical">Electrical</option>
+              <option value="hvac">HVAC</option>
+              <option value="appliance">Appliance</option>
+              <option value="structural">Structural</option>
+              <option value="other">Other</option>
+            </select>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 border dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => setAddIssueModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="px-4 py-2 bg-purple-600 dark:bg-purple-700 text-white rounded hover:bg-purple-700 dark:hover:bg-purple-600">
+                Create Issue
+              </button>
+            </div>
+          </motion.form>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* Issue Detail Modal with Comments */}
+    <AnimatePresence>
+      {issueDetailModalOpen && selectedIssueId !== null && (() => {
+        const issue = getProjectIssues(selectedProjectId || 0).find(i => i.id === selectedIssueId);
+        if (!issue) return null;
+        const comments = getIssueComments(selectedIssueId);
+
+        return (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 dark:bg-black/70 flex justify-center items-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{issue.title}</h2>
+                  <div className="flex gap-2 mt-2">
+                    <span className={`px-2 py-1 text-xs rounded-full text-white ${getStatusColor(issue.status)}`}>
+                      {issue.status.replace('_', ' ')}
+                    </span>
+                    <span className={`px-2 py-1 text-xs font-semibold ${getPriorityColor(issue.priority)}`}>
+                      {issue.priority.toUpperCase()}
+                    </span>
+                    <span className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded-full text-gray-700 dark:text-gray-300">
+                      {issue.category}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setIssueDetailModalOpen(false);
+                    setIssuesModalOpen(true);
+                  }}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                >
+                  <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                </button>
+              </div>
+
+              <p className="text-gray-700 dark:text-gray-300 mb-6">{issue.description}</p>
+
+              <div className="border-t dark:border-gray-700 pt-4">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                  <MessageSquare className="w-5 h-5" />
+                  Comments ({comments.length})
+                </h3>
+
+                <div className="space-y-3 mb-4">
+                  {comments.map((comment) => (
+                    <div key={comment.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <p className="text-sm text-gray-800 dark:text-gray-200">{comment.comment}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {comment.createdAt ? new Date(comment.createdAt).toLocaleString() : 'Just now'}
+                      </p>
+                    </div>
+                  ))}
+                  {comments.length === 0 && (
+                    <p className="text-center text-gray-500 dark:text-gray-400 py-4">No comments yet</p>
+                  )}
+                </div>
+
+                <form onSubmit={handleAddComment} className="flex gap-2">
+                  <input
+                    className="flex-1 p-2 border dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    placeholder="Add a comment..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-purple-600 dark:bg-purple-700 text-white rounded hover:bg-purple-700 dark:hover:bg-purple-600"
+                  >
+                    Send
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        );
+      })()}
     </AnimatePresence>
   </div>
 );
