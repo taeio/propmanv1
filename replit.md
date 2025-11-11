@@ -50,6 +50,7 @@ Preferred communication style: Simple, everyday language.
 ### Maintenance Issue Tracking Features
 - **Multi-Role Communication**: Enables tenants, property managers/assistants, and maintenance workers to communicate on project maintenance issues.
 - **Issue Management**: Create, view, and track maintenance issues per project with status tracking (open, in_progress, resolved, closed).
+- **Status Updates**: Dropdown in issue detail modal allows changing issue status (Open → In Progress → Resolved → Closed) with immediate UI updates and database persistence.
 - **Priority System**: Four priority levels (low, medium, high, urgent) with color-coded badges.
 - **Category Organization**: Six predefined categories (plumbing, electrical, HVAC, appliance, structural, other).
 - **Comments Thread**: Real-time comment system for multi-party communication on each issue.
