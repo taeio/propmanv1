@@ -30,7 +30,7 @@ export default function DashboardPage() {
   if (!isHydrated) {
     return (
       <div className="p-6">
-        <p className="text-gray-500">Loading dashboard...</p>
+        <p className="text-gray-500 dark:text-gray-400">Loading dashboard...</p>
       </div>
     );
   }
@@ -51,7 +51,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="text-3xl font-bold text-gray-800"
+          className="text-3xl font-bold text-gray-800 dark:text-gray-100"
         >
           Dashboard Overview
         </motion.h1>
@@ -86,14 +86,14 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 border border-gray-100 dark:border-gray-700"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
-              <Users className="w-5 h-5 text-columbia-700" /> Rent Due / Late Clients
+            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
+              <Users className="w-5 h-5 text-columbia-700 dark:text-columbia-400" /> Rent Due / Late Clients
             </h2>
-            <table className="min-w-full text-sm text-gray-700">
+            <table className="min-w-full text-sm text-gray-700 dark:text-gray-300">
               <thead>
-                <tr className="text-left text-gray-500 border-b">
+                <tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
                   <th className="pb-2">Name</th>
                   <th className="pb-2">Property</th>
                   <th className="pb-2">Rent Status</th>
@@ -104,7 +104,7 @@ export default function DashboardPage() {
                 {dueClients.map((client) => (
                   <tr
                     key={client.id}
-                    className="border-b last:border-none hover:bg-gray-50 transition"
+                    className="border-b dark:border-gray-700 last:border-none hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                   >
                     <td className="py-2">{client.firstName}</td>
                     <td className="py-2">{client.unitNumber || "N/A"}</td>
@@ -112,8 +112,8 @@ export default function DashboardPage() {
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${
                           client.status === "Late"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
+                            ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200"
+                            : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200"
                         }`}
                       >
                         {client.status}
@@ -132,20 +132,20 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 border border-gray-100 dark:border-gray-700"
         >
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
-            <Briefcase className="w-5 h-5 text-columbia-700" /> Recent Projects
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-columbia-700 dark:text-columbia-400" /> Recent Projects
           </h2>
 
           {projects.length === 0 ? (
-            <p className="text-gray-500 text-sm">
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
               No projects yet — add one from the Projects tab.
             </p>
           ) : (
-            <table className="min-w-full text-sm text-gray-700">
+            <table className="min-w-full text-sm text-gray-700 dark:text-gray-300">
               <thead>
-                <tr className="text-left text-gray-500 border-b">
+                <tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
                   <th className="pb-2">Name</th>
                   <th className="pb-2">Client</th>
                   <th className="pb-2">Status</th>
@@ -159,7 +159,7 @@ export default function DashboardPage() {
                   .map((project) => (
                     <tr
                       key={project.id}
-                      className="border-b last:border-none hover:bg-gray-50 transition"
+                      className="border-b dark:border-gray-700 last:border-none hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                     >
                       <td className="py-2">{project.name}</td>
                       <td className="py-2">{project.externalClient}</td>
@@ -167,10 +167,10 @@ export default function DashboardPage() {
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${
                             project.status === "Completed"
-                              ? "bg-green-100 text-green-700"
+                              ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200"
                               : project.status === "Pending"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-blue-100 text-blue-700"
+                              ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
                           }`}
                         >
                           {project.status}
@@ -201,13 +201,13 @@ function StatCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-white p-6 rounded-2xl shadow-md flex items-center justify-between border border-gray-100"
+      className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md flex items-center justify-between border border-gray-100 dark:border-gray-700"
     >
       <div>
-        <p className="text-sm text-gray-500">{title}</p>
-        <h2 className="text-2xl font-semibold text-gray-800">{value}</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
+        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">{value}</h2>
       </div>
-      <div className="bg-gray-50 p-3 rounded-xl">{icon}</div>
+      <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-xl">{icon}</div>
     </motion.div>
   );
 }

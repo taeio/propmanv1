@@ -41,15 +41,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -250, opacity: 0 }}
             transition={{ type: "tween", duration: 0.25 }}
-            className="fixed md:static top-0 left-0 h-full md:h-auto w-64 bg-white shadow-lg z-40 md:block"
+            className="fixed md:static top-0 left-0 h-full md:h-auto w-64 bg-white dark:bg-gray-800 shadow-lg z-40 md:block"
           >
-            <div className="flex justify-between items-center p-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-columbia-700">
+            <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-columbia-700 dark:text-gray-200">
                 PropMan
               </h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="md:hidden text-gray-600 hover:text-red-500 transition"
+                className="md:hidden text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition"
               >
                 <X size={24} />
               </button>
@@ -60,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-columbia-700 hover:text-white transition"
+                  className="flex items-center gap-3 p-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-columbia-700 hover:text-white dark:hover:bg-gray-700 transition"
                   onClick={() => {
                     if (windowWidth < 768) setIsOpen(false);
                   }}
@@ -78,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       {isOpen && windowWidth < 768 && (
         <div
           onClick={() => setIsOpen(false)}
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 md:hidden"
+          className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm z-30 md:hidden"
         />
       )}
     </>

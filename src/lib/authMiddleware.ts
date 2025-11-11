@@ -1,13 +1,17 @@
 // Auth middleware helper for Next.js API routes
-import { getSession, getPassportMiddleware as getPassportMw } from "../../server/replitAuth";
+import { getSession, setupLocalAuth } from "../../server/localAuth";
 import passport from "passport";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-// Re-export for convenience
-export { getPassportMiddleware } from "../../server/replitAuth";
+let isLocalAuthSetup = false;
 
 // Initialize session and passport for API routes
 export function initAuth(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+  if (!isLocalAuthSetup) {
+    setupLocalAuth();
+    isLocalAuthSetup = true;
+  }
+
   return new Promise((resolve, reject) => {
     const sessionMiddleware = getSession();
     sessionMiddleware(req as any, res as any, (err: any) => {
@@ -25,10 +29,6 @@ export function initAuth(req: NextApiRequest, res: NextApiResponse): Promise<voi
   });
 }
 
-// Serialize/deserialize user for passport
-passport.serializeUser((user: Express.User, cb) => cb(null, user));
-passport.deserializeUser((user: Express.User, cb) => cb(null, user));
-
 // Helper function to require authentication in API routes
 export async function requireAuth(req: NextApiRequest, res: NextApiResponse): Promise<{ id: string } | null> {
   await initAuth(req, res);
@@ -38,7 +38,7 @@ export async function requireAuth(req: NextApiRequest, res: NextApiResponse): Pr
     return null;
   }
 
-  const userId = (req as any).user?.claims?.sub;
+  const userId = (req as any).user?.id;
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return null;

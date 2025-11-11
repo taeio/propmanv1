@@ -10,12 +10,11 @@ export default async function handler(
   try {
     await initAuth(req, res);
     
-    // Check if authenticated using passport's isAuthenticated method
     if (!(req as any).isAuthenticated || !(req as any).isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const userId = (req as any).user?.claims?.sub;
+    const userId = (req as any).user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }

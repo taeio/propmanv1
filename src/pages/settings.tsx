@@ -47,7 +47,7 @@ export default function SettingsPage() {
             Please log in to access your settings
           </p>
           <button
-            onClick={() => window.location.href = "/api/auth/login"}
+            onClick={() => window.location.href = "/auth"}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
           >
             Log In
