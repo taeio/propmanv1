@@ -15,7 +15,7 @@ export default async function handler(
   try {
     await initAuth(req, res);
 
-    const { username, password, email, firstName, lastName } = req.body;
+    const { username, password, email, firstName, lastName, role } = req.body;
 
     if (!username || !password) {
       return res.status(400).json({ error: "Username and password are required" });
@@ -34,6 +34,7 @@ export default async function handler(
       email: email || null,
       firstName: firstName || null,
       lastName: lastName || null,
+      role: role || "property_manager",
       themePreference: "light",
     });
 
@@ -49,6 +50,7 @@ export default async function handler(
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        role: user.role,
       });
     });
   } catch (error) {

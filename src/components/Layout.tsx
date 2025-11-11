@@ -12,7 +12,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
   
   const userRole = user?.role || "property_manager";
-  const showNavigation = !isLoading && userRole === "property_manager";
+  const showNavigation = !isLoading && user && userRole === "property_manager";
   
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">

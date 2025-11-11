@@ -43,6 +43,7 @@ export default async function handler(
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          role: (user as any).role,
         });
       });
     })(req, res);
