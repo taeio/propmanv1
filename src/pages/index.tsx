@@ -183,7 +183,7 @@ export default function DashboardPage() {
                 {activeIssues.map((issue) => (
                   <tr
                     key={issue.id}
-                    onClick={() => router.push('/projects')}
+                    onClick={() => router.push({ pathname: '/projects', query: { projectId: issue.projectId, openMaintenance: 'true' } })}
                     className="border-b dark:border-gray-700 last:border-none hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
                   >
                     <td className="py-2">

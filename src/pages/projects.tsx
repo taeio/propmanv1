@@ -1,13 +1,15 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Briefcase, Plus, Trash, Edit, Wrench, MessageSquare, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Layout from "@/components/Layout";
 import { useAppStore } from "@/store/useAppStore";
+import { useRouter } from "next/router";
 
 type ProjectStatus = "In Progress" | "Completed" | "Pending";
 
 export default function ProjectsPage() {
+  const router = useRouter();
   const projects = useAppStore((state) => state.projects);
   const addProject = useAppStore((state) => state.addProject);
   const updateProject = useAppStore((state) => state.updateProject);
@@ -28,6 +30,15 @@ export default function ProjectsPage() {
   const [addIssueModalOpen, setAddIssueModalOpen] = useState(false);
   const [issueDetailModalOpen, setIssueDetailModalOpen] = useState(false);
   const [selectedIssueId, setSelectedIssueId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (router.query.projectId && router.query.openMaintenance === 'true') {
+      const projectId = Number(router.query.projectId);
+      setSelectedProjectId(projectId);
+      setIssuesModalOpen(true);
+      router.replace('/projects', undefined, { shallow: true });
+    }
+  }, [router.query]);
 
   const [form, setForm] = useState({
     name: "",
