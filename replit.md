@@ -57,6 +57,7 @@ Preferred communication style: Simple, everyday language.
 - **Modal-Based UI**: Three-modal workflow (issue list, add issue, issue detail with comments).
 - **Assignment Tracking**: Support for assigning issues to specific users with optional due dates.
 - **Full Dark Mode**: Complete dark mode support across all maintenance modals and components.
+- **Dashboard Integration**: Active maintenance issues (open/in_progress) appear on the dashboard sorted by priority (urgent → high → medium → low), showing project name, issue title, priority badge, category, and status. Clicking any issue navigates to the Projects page and automatically opens that project's maintenance modal.
 
 ## External Dependencies
 
