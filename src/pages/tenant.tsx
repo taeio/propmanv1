@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Wrench, Settings, LogOut, User, Moon, Sun } from "lucide-react";
 import { assignPriorityFromMessage } from "@/utils/priorityAssignment";
 import { withRoleProtection } from "@/hoc/withRoleProtection";
+import TenantRentPayment from "@/components/TenantRentPayment";
+import type { Client } from "../../shared/schema";
 
 function TenantDashboard() {
   const router = useRouter();
@@ -40,6 +42,8 @@ function TenantDashboard() {
     lastName: profile.lastName,
     email: profile.email,
   });
+  const [myClient, setMyClient] = useState<Client | null>(null);
+  const [loadingClient, setLoadingClient] = useState(true);
 
   useEffect(() => {
     setEditForm({
@@ -48,6 +52,29 @@ function TenantDashboard() {
       email: profile.email,
     });
   }, [profile]);
+
+  useEffect(() => {
+    const fetchMyClientRecord = async () => {
+      if (!user?.clientId) {
+        setLoadingClient(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/data/clients/${user.clientId}`);
+        if (response.ok) {
+          const client = await response.json();
+          setMyClient(client);
+        }
+      } catch (error) {
+        console.error("Failed to fetch client record:", error);
+      } finally {
+        setLoadingClient(false);
+      }
+    };
+
+    fetchMyClientRecord();
+  }, [user]);
 
   const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,6 +188,52 @@ function TenantDashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg"
+          >
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+              Rent Payment
+            </h2>
+            {loadingClient ? (
+              <div className="text-center py-8 text-gray-500">Loading...</div>
+            ) : myClient ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Unit Number</p>
+                    <p className="font-semibold text-gray-900 dark:text-gray-100">{myClient.unitNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Monthly Rent</p>
+                    <p className="font-semibold text-gray-900 dark:text-gray-100">${myClient.rentAmount.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
+                    <p className={`font-semibold ${myClient.status === "Paid" ? "text-green-600 dark:text-green-400" : "text-orange-600 dark:text-orange-400"}`}>
+                      {myClient.status}
+                    </p>
+                  </div>
+                </div>
+                <TenantRentPayment
+                  clientId={myClient.id}
+                  rentAmount={myClient.rentAmount}
+                  onPaymentSuccess={() => {
+                    alert("Payment successful! Your rent payment has been recorded.");
+                    setMyClient(prev => prev ? { ...prev, status: "Paid" } : null);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>Your account is not linked to a rental unit.</p>
+                <p className="text-sm mt-2">Please contact your property manager to set up rent payments.</p>
+              </div>
+            )}
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
             className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg"
           >
             <div className="flex items-center gap-3 mb-4">
