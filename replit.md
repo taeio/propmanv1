@@ -18,8 +18,8 @@ Preferred communication style: Simple, everyday language.
 - **Responsive Design**: Mobile-first approach with a collapsible sidebar.
 - **Component Architecture**: Centralized Layout, dynamic imports for performance, and client components for interactivity.
 - **Routing**:
-    - **Pages**: `/`, `/clients`, `/projects`, `/notes`, `/finance`, `/settings`.
-    - **API Routes**: `/api/auth/*` for authentication, `/api/user/profile` for user management, and `/api/data/*` for multi-tenant CRUD operations (clients, projects, notes, payments).
+    - **Pages**: `/`, `/clients`, `/projects`, `/notes`, `/finance`, `/settings`, `/tenant`.
+    - **API Routes**: `/api/auth/*` for authentication, `/api/user/profile` for user management, `/api/data/*` for multi-tenant CRUD operations (clients, projects, notes, payments), and `/api/stripe/*` for secure payment processing.
 
 ### Backend Architecture
 - **Database**: PostgreSQL with Drizzle ORM for multi-tenant data storage and session management.
@@ -32,7 +32,7 @@ Preferred communication style: Simple, everyday language.
 - **Clients**: `id`, `firstName`, `lastName`, `unitNumber`, `rentAmount`, `status`.
 - **Notes**: `id`, `text`, `category`.
 - **Payments**: `id`, `clientId`, `amount`, `paymentDate`, `notes`, `userId` (multi-tenant).
-- **Users**: `id`, `username`, `firstName`, `lastName`, `email`, `role`, `themePreference`, `createdAt`.
+- **Users**: `id`, `username`, `firstName`, `lastName`, `email`, `role`, `themePreference`, `clientId` (links tenants to their client record), `createdAt`.
 - **Maintenance Issues**: `id`, `projectId`, `title`, `description`, `status`, `priority`, `category`, `createdBy`, `assignedTo`, `dueDate`.
 - **Maintenance Comments**: `id`, `issueId`, `userId`, `comment`, `createdAt`.
 
@@ -65,12 +65,13 @@ Preferred communication style: Simple, everyday language.
 
 ### Tenant Dashboard (`/tenant`)
 - **Separate Interface**: Dedicated tenant-facing dashboard with distinct UI design (indigo color scheme vs. property manager's red/silver).
-- **Limited Functionality**: Tenants only have access to maintenance requests and settings (no access to projects, clients, finance, or notes).
+- **Limited Functionality**: Tenants only have access to rent payments, maintenance requests, and settings (no access to projects, clients, finance, or notes).
 - **No Navigation Sidebar**: Tenants do not see the standard sidebar/topbar navigation - they have a simplified interface.
 - **Simplified Request Form**: Maintenance request form without manual priority selection - priority is automatically assigned based on issue description.
 - **Request Tracking**: View all submitted maintenance requests with status updates and comments from property managers.
 - **Settings Integration**: Full access to profile settings (name, email) and theme preferences.
 - **Real-time Updates**: View status changes and comments on maintenance requests in real-time.
+- **Online Rent Payment**: Secure Stripe integration for PCI-compliant credit card payments with server-side validation, payment verification, and automatic payment recording.
 
 ### Authentication & Authorization
 - **Role-Based Access Control**: Users are assigned roles ("property_manager" or "tenant") during signup that determine dashboard access.
@@ -104,6 +105,11 @@ Preferred communication style: Simple, everyday language.
 - **express-session**
 - **connect-pg-simple**
 - **pg**
+
+### Payment Processing
+- **Stripe 19.3.0** (server-side payment processing)
+- **@stripe/stripe-js** (client-side Stripe integration)
+- **@stripe/react-stripe-js** (React components for Stripe Elements)
 
 ### Development Tools
 - **ESLint 9.39.1**
