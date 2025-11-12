@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import Stripe from "stripe";
 import { initAuth } from "../../../lib/authMiddleware";
 import { storage } from "../../../../server/storage";
 
@@ -18,18 +19,43 @@ export default async function handler(
     }
 
     const user = (req as any).user;
-    const { clientId, amount, paymentIntentId } = req.body;
+    const { paymentIntentId } = req.body;
 
-    if (!clientId || !amount) {
-      return res.status(400).json({ error: "Missing required fields" });
+    if (!paymentIntentId) {
+      return res.status(400).json({ error: "Missing payment intent ID" });
     }
 
-    await storage.addPayment({
+    if (!user.clientId) {
+      return res.status(400).json({ error: "Your account is not linked to a client record" });
+    }
+
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+      return res.status(500).json({ error: "Stripe not configured" });
+    }
+
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: "2025-10-29.clover",
+    });
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (paymentIntent.status !== "succeeded") {
+      return res.status(400).json({ error: "Payment not confirmed by Stripe" });
+    }
+
+    if (paymentIntent.metadata.userId !== user.id) {
+      return res.status(403).json({ error: "Payment does not belong to this user" });
+    }
+
+    const amount = paymentIntent.amount / 100;
+
+    await storage.createPayment({
       userId: user.id,
-      clientId,
+      clientId: user.clientId,
       amount,
       paymentDate: new Date(),
-      notes: `Stripe payment: ${paymentIntentId || "N/A"}`,
+      notes: `Stripe payment: ${paymentIntentId}`,
     });
 
     res.status(200).json({ success: true });

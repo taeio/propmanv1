@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 import { initAuth } from "../../../lib/authMiddleware";
+import { storage } from "../../../../server/storage";
 
 export default async function handler(
   req: NextApiRequest,
@@ -17,6 +18,21 @@ export default async function handler(
       return res.status(401).json({ error: "Unauthorized" });
     }
 
+    const user = (req as any).user;
+
+    if (!user.clientId) {
+      return res.status(400).json({ error: "Your account is not linked to a client record" });
+    }
+
+    const client = await storage.getClient(user.clientId, user.id);
+    if (!client) {
+      return res.status(404).json({ error: "Client record not found" });
+    }
+
+    if (client.rentAmount <= 0) {
+      return res.status(400).json({ error: "Invalid rent amount" });
+    }
+
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
       return res.status(500).json({ error: "Stripe not configured" });
@@ -26,24 +42,16 @@ export default async function handler(
       apiVersion: "2025-10-29.clover",
     });
 
-    const { amount, clientId, description } = req.body;
-
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ error: "Invalid amount" });
-    }
-
-    const user = (req as any).user;
-
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100),
+      amount: Math.round(client.rentAmount * 100),
       currency: "usd",
       automatic_payment_methods: {
         enabled: true,
       },
       metadata: {
         userId: user.id,
-        clientId: clientId?.toString() || "",
-        description: description || "Rent payment",
+        clientId: client.id.toString(),
+        description: "Monthly rent payment",
       },
     });
 

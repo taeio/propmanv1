@@ -37,15 +37,21 @@ function PaymentForm({ amount, clientId, onSuccess, onCancel }: PaymentFormProps
         setErrorMessage(error.message || "Payment failed");
         setProcessing(false);
       } else if (paymentIntent && paymentIntent.status === "succeeded") {
-        await fetch("/api/stripe/record-payment", {
+        const recordResponse = await fetch("/api/stripe/record-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            clientId,
-            amount,
             paymentIntentId: paymentIntent.id,
           }),
         });
+
+        const recordData = await recordResponse.json();
+
+        if (!recordResponse.ok) {
+          setErrorMessage(recordData.error || "Failed to record payment");
+          setProcessing(false);
+          return;
+        }
 
         onSuccess();
       }
@@ -120,11 +126,7 @@ export default function TenantRentPayment({ clientId, rentAmount, onPaymentSucce
       const response = await fetch("/api/stripe/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: rentAmount,
-          clientId,
-          description: "Monthly rent payment",
-        }),
+        body: JSON.stringify({}),
       });
 
       const data = await response.json();
