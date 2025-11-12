@@ -1,30 +1,31 @@
 // Logout route
 import type { NextApiRequest, NextApiResponse } from "next";
-import * as client from "openid-client";
 import { initAuth } from "../../../lib/authMiddleware";
-
-const getOidcConfig = async () => {
-  return await client.discovery(
-    new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-    process.env.REPL_ID!
-  );
-};
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
   try {
     await initAuth(req, res);
     
-    (req as any).logout(() => {
-      getOidcConfig().then((config) => {
-        const logoutUrl = client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req.headers["x-forwarded-proto"] || "https"}://${req.headers.host}`,
-        }).href;
+    (req as any).logout((err: any) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ error: "Logout failed" });
+      }
+      
+      (req as any).session.destroy((destroyErr: any) => {
+        if (destroyErr) {
+          console.error("Session destroy error:", destroyErr);
+          return res.status(500).json({ error: "Failed to destroy session" });
+        }
         
-        res.redirect(logoutUrl);
+        res.status(200).json({ success: true });
       });
     });
   } catch (error) {
