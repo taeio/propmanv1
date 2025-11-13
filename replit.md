@@ -32,7 +32,7 @@ Preferred communication style: Simple, everyday language.
 - **Clients**: `id`, `firstName`, `lastName`, `unitNumber`, `rentAmount`, `status`.
 - **Notes**: `id`, `text`, `category`.
 - **Payments**: `id`, `clientId`, `amount`, `paymentDate`, `notes`, `userId` (multi-tenant).
-- **Users**: `id`, `username`, `firstName`, `lastName`, `email`, `role`, `themePreference`, `clientId` (links tenants to their client record), `createdAt`.
+- **Users**: `id`, `username`, `firstName`, `lastName`, `email`, `role`, `themePreference`, `clientId` (links tenants to their client record), `stripeConnectedAccountId` (Stripe Connect account for property managers), `createdAt`.
 - **Maintenance Issues**: `id`, `projectId`, `title`, `description`, `status`, `priority`, `category`, `createdBy`, `assignedTo`, `dueDate`.
 - **Maintenance Comments**: `id`, `issueId`, `userId`, `comment`, `createdAt`.
 
@@ -63,6 +63,20 @@ Preferred communication style: Simple, everyday language.
 - **Dashboard Integration**: Active maintenance issues (open/in_progress) appear on the dashboard sorted by priority (urgent → high → medium → low), showing project name, issue title, priority badge, category, and status. Clicking any issue navigates to the Projects page and automatically opens that project's maintenance modal.
 - **Maintenance Tab**: Projects page includes dedicated maintenance tab showing all active maintenance issues across all projects with filtering to exclude soft-deleted items.
 
+### Stripe Connect Integration
+- **Property Manager Onboarding**: Property managers can connect their own Stripe accounts via Stripe Connect Express onboarding flow directly from Settings page.
+- **Multi-Tenant Payment Routing**: Rent payments from tenants are automatically routed to the property manager's connected Stripe account using `transfer_data`.
+- **Platform Fee**: Configurable platform fee (default 3%) via `STRIPE_PLATFORM_FEE_PERCENT` environment variable, collected on each rent payment.
+- **Account Validation**: Payment intents are only created when property manager's Stripe account has `charges_enabled` and `payouts_enabled` flags set.
+- **Connection Status Display**: Settings page shows real-time Stripe account status including details submitted, charges enabled, and payouts enabled.
+- **Security**: Server-side validation ensures rent amounts are derived from database (not client), payment intents are verified with Stripe before recording, and connected account IDs are validated with `acct_` prefix.
+- **Error Handling**: Clear user-facing error messages when property managers haven't connected Stripe or haven't completed onboarding.
+- **API Endpoints**: 
+  - `/api/stripe/connect/create-account-link` - Creates Stripe onboarding links
+  - `/api/stripe/connect/status` - Retrieves connected account status
+  - `/api/stripe/create-payment-intent` - Creates payment intents with Connect routing
+  - `/api/stripe/record-payment` - Records payments after Stripe verification
+
 ### Tenant Dashboard (`/tenant`)
 - **Separate Interface**: Dedicated tenant-facing dashboard with distinct UI design (indigo color scheme vs. property manager's red/silver).
 - **Limited Functionality**: Tenants only have access to rent payments, maintenance requests, and settings (no access to projects, clients, finance, or notes).
@@ -71,7 +85,7 @@ Preferred communication style: Simple, everyday language.
 - **Request Tracking**: View all submitted maintenance requests with status updates and comments from property managers.
 - **Settings Integration**: Full access to profile settings (name, email) and theme preferences.
 - **Real-time Updates**: View status changes and comments on maintenance requests in real-time.
-- **Online Rent Payment**: Secure Stripe integration for PCI-compliant credit card payments with server-side validation, payment verification, and automatic payment recording.
+- **Online Rent Payment**: Secure Stripe integration for PCI-compliant credit card payments that route directly to property manager's connected Stripe account, with server-side validation, payment verification, and automatic payment recording.
 
 ### Authentication & Authorization
 - **Role-Based Access Control**: Users are assigned roles ("property_manager" or "tenant") during signup that determine dashboard access.
@@ -107,7 +121,7 @@ Preferred communication style: Simple, everyday language.
 - **pg**
 
 ### Payment Processing
-- **Stripe 19.3.0** (server-side payment processing)
+- **Stripe 19.3.0** (server-side payment processing with Connect)
 - **@stripe/stripe-js** (client-side Stripe integration)
 - **@stripe/react-stripe-js** (React components for Stripe Elements)
 
