@@ -24,13 +24,22 @@ export default async function handler(
       return res.status(400).json({ error: "Your account is not linked to a client record" });
     }
 
-    const client = await storage.getClient(user.clientId, user.id);
+    const client = await storage.getClientById(user.clientId);
     if (!client) {
       return res.status(404).json({ error: "Client record not found" });
     }
 
     if (client.rentAmount <= 0) {
       return res.status(400).json({ error: "Invalid rent amount" });
+    }
+
+    const propertyManager = await storage.getUser(client.userId);
+    if (!propertyManager) {
+      return res.status(404).json({ error: "Property manager not found" });
+    }
+
+    if (!propertyManager.stripeConnectedAccountId) {
+      return res.status(400).json({ error: "Property manager has not connected their Stripe account yet. Please contact your property manager." });
     }
 
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -42,15 +51,31 @@ export default async function handler(
       apiVersion: "2025-10-29.clover",
     });
 
+    const account = await stripe.accounts.retrieve(propertyManager.stripeConnectedAccountId);
+    if (!account.charges_enabled || !account.payouts_enabled) {
+      return res.status(400).json({ 
+        error: "Property manager's payment account is not fully set up yet. Please contact your property manager to complete their Stripe setup." 
+      });
+    }
+
+    const amountInCents = Math.round(client.rentAmount * 100);
+    const platformFeePercent = parseFloat(process.env.STRIPE_PLATFORM_FEE_PERCENT || "0.03");
+    const platformFee = Math.round(amountInCents * platformFeePercent);
+
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(client.rentAmount * 100),
+      amount: amountInCents,
       currency: "usd",
       automatic_payment_methods: {
         enabled: true,
       },
+      application_fee_amount: platformFee,
+      transfer_data: {
+        destination: propertyManager.stripeConnectedAccountId,
+      },
       metadata: {
         userId: user.id,
         clientId: client.id.toString(),
+        propertyManagerId: propertyManager.id,
         description: "Monthly rent payment",
       },
     });

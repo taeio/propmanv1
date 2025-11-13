@@ -62,6 +62,7 @@ type UserProfile = {
   firstName: string;
   lastName: string;
   email: string;
+  role: "property_manager" | "tenant";
   themePreference: "light" | "dark";
   isDirty: boolean;
 };
@@ -159,6 +160,7 @@ export const useAppStore = create<AppStore>()(
         firstName: "",
         lastName: "",
         email: "",
+        role: "property_manager",
         themePreference: (typeof window !== "undefined" && localStorage.getItem("theme") === "dark") ? "dark" : "light",
         isDirty: false,
       },
@@ -270,6 +272,7 @@ export const useAppStore = create<AppStore>()(
                   firstName: userData.firstName || "",
                   lastName: userData.lastName || "",
                   email: userData.email || "",
+                  role: userData.role || "property_manager",
                   themePreference: userData.themePreference || state.profile.themePreference,
                   isDirty: false,
                 },

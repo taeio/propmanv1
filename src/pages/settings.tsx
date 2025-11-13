@@ -1,14 +1,24 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Cog, Moon, Sun, Save } from "lucide-react";
+import { Cog, Moon, Sun, Save, CreditCard, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAppStore } from "../store/useAppStore";
 import { withRoleProtection } from "@/hoc/withRoleProtection";
+
+interface StripeConnectStatus {
+  connected: boolean;
+  detailsSubmitted: boolean;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+}
 
 function SettingsPage() {
   const { profile, isAuthenticated, updateProfile, saveProfile, setTheme } = useAppStore();
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+  const [stripeStatus, setStripeStatus] = useState<StripeConnectStatus | null>(null);
+  const [isLoadingStripe, setIsLoadingStripe] = useState(false);
+  const [stripeError, setStripeError] = useState("");
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -28,6 +38,55 @@ function SettingsPage() {
     const newTheme = profile.themePreference === "light" ? "dark" : "light";
     setTheme(newTheme);
   };
+
+  const fetchStripeStatus = async () => {
+    if (!isAuthenticated || profile.role !== 'property_manager') return;
+    
+    try {
+      const response = await fetch('/api/stripe/connect/status');
+      if (response.ok) {
+        const data = await response.json();
+        setStripeStatus(data);
+      }
+    } catch (error) {
+      console.error('Error fetching Stripe status:', error);
+    }
+  };
+
+  const handleConnectStripe = async () => {
+    setIsLoadingStripe(true);
+    setStripeError("");
+    
+    try {
+      const response = await fetch('/api/stripe/connect/create-account-link', {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create account link');
+      }
+      
+      const data = await response.json();
+      window.location.href = data.url;
+    } catch (error: any) {
+      setStripeError(error.message || 'Failed to connect Stripe');
+      setIsLoadingStripe(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStripeStatus();
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('stripe_connected') === 'true') {
+      setSaveMessage('Stripe account connected successfully!');
+      setTimeout(() => {
+        window.history.replaceState({}, '', '/settings');
+        setSaveMessage('');
+        fetchStripeStatus();
+      }, 3000);
+    }
+  }, [isAuthenticated, profile.role]);
 
   return (
     <div className="p-6 space-y-8 max-w-2xl mx-auto">
@@ -134,6 +193,80 @@ function SettingsPage() {
           </button>
         </div>
       </div>
+
+      {/* Stripe Connect (Property Managers Only) */}
+      {isAuthenticated && profile.role === 'property_manager' && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 border border-gray-100 dark:border-gray-700 space-y-4">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2 dark:text-gray-100">
+            <CreditCard size={24} />
+            Payment Processing
+          </h2>
+          
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Connect your Stripe account to receive rent payments from tenants and make payments to contractors.
+          </p>
+
+          {stripeStatus?.connected ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                <CheckCircle2 size={20} />
+                <span className="font-medium">Stripe Account Connected</span>
+              </div>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600 dark:text-gray-400">Details Submitted:</span>
+                  <span className={stripeStatus.detailsSubmitted ? "text-green-600 dark:text-green-400" : "text-yellow-600 dark:text-yellow-400"}>
+                    {stripeStatus.detailsSubmitted ? "Yes" : "Pending"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600 dark:text-gray-400">Charges Enabled:</span>
+                  <span className={stripeStatus.chargesEnabled ? "text-green-600 dark:text-green-400" : "text-yellow-600 dark:text-yellow-400"}>
+                    {stripeStatus.chargesEnabled ? "Yes" : "No"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600 dark:text-gray-400">Payouts Enabled:</span>
+                  <span className={stripeStatus.payoutsEnabled ? "text-green-600 dark:text-green-400" : "text-yellow-600 dark:text-yellow-400"}>
+                    {stripeStatus.payoutsEnabled ? "Yes" : "No"}
+                  </span>
+                </div>
+              </div>
+
+              {!stripeStatus.detailsSubmitted && (
+                <button
+                  onClick={handleConnectStripe}
+                  disabled={isLoadingStripe}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  Complete Stripe Setup
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
+                <AlertCircle size={20} />
+                <span className="font-medium">No Payment Account Connected</span>
+              </div>
+              
+              <button
+                onClick={handleConnectStripe}
+                disabled={isLoadingStripe}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                <CreditCard size={18} />
+                {isLoadingStripe ? "Connecting..." : "Connect Stripe Account"}
+              </button>
+            </div>
+          )}
+
+          {stripeError && (
+            <p className="text-sm text-red-600 dark:text-red-400">{stripeError}</p>
+          )}
+        </div>
+      )}
 
       {/* Save button */}
       {isAuthenticated && (

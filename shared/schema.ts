@@ -33,6 +33,7 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role").notNull().default("property_manager"),
   clientId: integer("client_id"), // Link tenant users to their client record (foreign key defined in DB)
+  stripeConnectedAccountId: varchar("stripe_connected_account_id"), // Stripe Connect account for receiving payments
   themePreference: varchar("theme_preference").default("light"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

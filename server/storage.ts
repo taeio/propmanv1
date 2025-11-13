@@ -26,9 +26,11 @@ export interface IStorage {
   createUser(user: UpsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserProfile(id: string, data: Partial<User>): Promise<User | undefined>;
+  updateUserStripeAccount(userId: string, accountId: string): Promise<User | undefined>;
   
   getClients(userId: string): Promise<Client[]>;
   getClient(id: number, userId: string): Promise<Client | undefined>;
+  getClientById(id: number): Promise<Client | undefined>;
   createClient(client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Promise<Client>;
   updateClient(id: number, userId: string, data: Partial<Client>): Promise<Client | undefined>;
   deleteClient(id: number, userId: string): Promise<void>;
@@ -105,6 +107,22 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async updateUserStripeAccount(userId: string, accountId: string): Promise<User | undefined> {
+    if (!accountId.startsWith('acct_')) {
+      throw new Error('Invalid Stripe account ID format');
+    }
+    
+    const [user] = await db
+      .update(users)
+      .set({
+        stripeConnectedAccountId: accountId,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
   async getClients(userId: string): Promise<Client[]> {
     return db.select().from(clients).where(eq(clients.userId, userId));
   }
@@ -114,6 +132,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(clients)
       .where(and(eq(clients.id, id), eq(clients.userId, userId)));
+    return client;
+  }
+
+  async getClientById(id: number): Promise<Client | undefined> {
+    const [client] = await db
+      .select()
+      .from(clients)
+      .where(eq(clients.id, id));
     return client;
   }
 
