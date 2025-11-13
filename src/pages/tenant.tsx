@@ -295,8 +295,9 @@ function TenantDashboard() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onSubmit={handleSubmitRequest}
-              className="bg-white dark:bg-gray-800 p-6 rounded-2xl w-full max-w-lg space-y-4"
+              className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg mx-auto max-h-[90vh] overflow-y-auto"
             >
+              <div className="p-4 md:p-6 space-y-4">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 New Maintenance Request
               </h2>
@@ -391,6 +392,7 @@ function TenantDashboard() {
                   Cancel
                 </button>
               </div>
+              </div>
             </motion.form>
           </motion.div>
         )}
@@ -406,8 +408,9 @@ function TenantDashboard() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 p-6 rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+              className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-2xl mx-auto max-h-[90vh] md:max-h-[85vh] overflow-y-auto"
             >
+              <div className="p-4 md:p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   My Maintenance Requests
@@ -458,6 +461,7 @@ function TenantDashboard() {
                   ))
                 )}
               </div>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -473,8 +477,9 @@ function TenantDashboard() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 p-6 rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+              className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-2xl mx-auto max-h-[90vh] md:max-h-[85vh] overflow-y-auto"
             >
+              <div className="p-4 md:p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   Request Details
@@ -529,6 +534,7 @@ function TenantDashboard() {
                   </div>
                 </div>
               </div>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -544,8 +550,9 @@ function TenantDashboard() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 p-6 rounded-2xl w-full max-w-md space-y-4"
+              className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto"
             >
+              <div className="p-4 md:p-6 space-y-4">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Settings
               </h2>
@@ -603,6 +610,7 @@ function TenantDashboard() {
                 >
                   Cancel
                 </button>
+              </div>
               </div>
             </motion.div>
           </motion.div>

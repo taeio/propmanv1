@@ -182,9 +182,10 @@ export default function TenantRentPayment({ clientId, rentAmount, onPaymentSucce
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
+              <div className="p-4 md:p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   Pay Rent
@@ -213,6 +214,7 @@ export default function TenantRentPayment({ clientId, rentAmount, onPaymentSucce
                   onCancel={handleCancel}
                 />
               </Elements>
+              </div>
             </motion.div>
           </motion.div>
         )}

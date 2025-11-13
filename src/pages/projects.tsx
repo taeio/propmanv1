@@ -343,15 +343,16 @@ function ProjectsPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 dark:bg-black/70 flex justify-center items-center p-4"
+          className="fixed inset-0 bg-black/50 dark:bg-black/70 flex justify-center items-center p-4 z-50"
         >
           <motion.form
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             onSubmit={handleSubmit}
-            className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-md space-y-4"
+            className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto"
           >
+            <div className="p-4 md:p-6 space-y-4">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
               {editingProjectId ? "Edit Project" : "New Project"}
             </h2>
@@ -425,6 +426,7 @@ function ProjectsPage() {
                 Save
               </button>
             </div>
+            </div>
           </motion.form>
         </motion.div>
       )}
@@ -443,8 +445,9 @@ function ProjectsPage() {
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+            className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl mx-auto max-h-[90vh] md:max-h-[85vh] overflow-y-auto"
           >
+            <div className="p-4 md:p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Maintenance Issues</h2>
               <button
@@ -494,6 +497,7 @@ function ProjectsPage() {
                 <p className="text-center text-gray-500 dark:text-gray-400 py-8">No maintenance issues yet</p>
               )}
             </div>
+            </div>
           </motion.div>
         </motion.div>
       )}
@@ -513,8 +517,9 @@ function ProjectsPage() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             onSubmit={handleAddIssue}
-            className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-md space-y-4"
+            className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto"
           >
+            <div className="p-4 md:p-6 space-y-4">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">New Maintenance Issue</h2>
 
             <input
@@ -570,6 +575,7 @@ function ProjectsPage() {
                 Create Issue
               </button>
             </div>
+            </div>
           </motion.form>
         </motion.div>
       )}
@@ -593,8 +599,9 @@ function ProjectsPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+              className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl mx-auto max-h-[90vh] md:max-h-[85vh] overflow-y-auto"
             >
+              <div className="p-4 md:p-6">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{issue.title}</h2>
@@ -673,6 +680,7 @@ function ProjectsPage() {
                     Send
                   </button>
                 </form>
+              </div>
               </div>
             </motion.div>
           </motion.div>

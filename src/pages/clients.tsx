@@ -231,17 +231,18 @@ function ClientsPage() {
       <AnimatePresence>
         {modalOpen && (
           <motion.div
-            className="fixed inset-0 bg-black/40 dark:bg-black/60 flex justify-center items-center z-50"
+            className="fixed inset-0 bg-black/40 dark:bg-black/60 flex justify-center items-center z-50 p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md p-6 relative"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto relative"
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.9 }}
             >
+              <div className="p-4 md:p-6">
               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
                 {editingClientId !== null ? "Edit Tenant" : "New Tenant"}
               </h2>
@@ -302,6 +303,7 @@ function ClientsPage() {
                   </button>
                 </div>
               </form>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -311,17 +313,18 @@ function ClientsPage() {
       <AnimatePresence>
         {paymentModalOpen && selectedClientId && (
           <motion.div
-            className="fixed inset-0 bg-black/40 dark:bg-black/60 flex justify-center items-center z-50"
+            className="fixed inset-0 bg-black/40 dark:bg-black/60 flex justify-center items-center z-50 p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md p-6 relative"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto relative"
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.9 }}
             >
+              <div className="p-4 md:p-6">
               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Record Payment</h2>
               {(() => {
                 const client = clients.find((c) => c.id === selectedClientId);
@@ -384,6 +387,7 @@ function ClientsPage() {
                   </button>
                 </div>
               </form>
+              </div>
             </motion.div>
           </motion.div>
         )}

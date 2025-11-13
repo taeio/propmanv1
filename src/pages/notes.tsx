@@ -71,11 +71,12 @@ function NotesPage() {
         </div>
 
         {modalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-30 dark:bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black bg-opacity-30 dark:bg-opacity-50 z-50 flex items-center justify-center p-4">
             <form
               onSubmit={handleSubmit}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 space-y-4 min-w-[340px]"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto"
             >
+              <div className="p-4 md:p-6 space-y-4">
               <textarea
                 className="w-full border dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 placeholder="Note text"
@@ -110,6 +111,7 @@ function NotesPage() {
                 >
                   {editingNoteId !== null ? "Update" : "Add"}
                 </button>
+              </div>
               </div>
             </form>
           </div>
