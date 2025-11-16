@@ -26,6 +26,9 @@ Preferred communication style: Simple, everyday language.
 - **Authentication**: Custom username/password authentication via Passport.js LocalStrategy with scrypt password hashing and PostgreSQL session store.
 - **Multi-tenancy**: All data (clients, projects, notes, payments) is isolated per user via `userId` foreign keys.
 - **Data Synchronization**: A hybrid approach where data is managed in localStorage when offline/logged out, and seamlessly synchronized with the PostgreSQL database when authenticated. Offline changes (creates, updates, deletes) are tracked and reconciled upon re-authentication.
+- **Performance Optimization**: Database indexes on all userId fields (projects, clients, notes, payments) for fast multi-tenant filtering, plus (projectId, deletedAt) composite index on maintenance issues for efficient soft-delete queries and (issueId) index on comments for fast thread loading.
+- **Input Validation**: Comprehensive Zod schemas validate all API inputs with type-safe request handling via custom middleware (validateBody, requireAuth, requireRole, compose).
+- **Security**: Role-based access control on all protected routes, server-side validation prevents unauthorized access, password hashing with scrypt, session management via PostgreSQL.
 
 ### Data Model
 - **Projects**: `id`, `name`, `externalClient`, `budget`, `amountPaid`, `status`.
