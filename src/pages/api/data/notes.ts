@@ -1,36 +1,44 @@
 // API routes for notes (GET all, POST)
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiResponse } from "next";
 import { initAuth } from "../../../lib/authMiddleware";
 import { storage } from "../../../../server/storage";
+import { compose, requireAuth, requireRole, validateBody } from "../../../../server/middleware";
+import { AuthenticatedRequest } from "../../../../server/types";
+import { NoteSchema } from "../../../../shared/validation";
+
+async function handleGet(req: AuthenticatedRequest, res: NextApiResponse) {
+  const userId = req.user!.id;
+  const notes = await storage.getNotes(userId);
+  return res.json(notes);
+}
+
+async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
+  const userId = req.user!.id;
+  const noteData = req.body;
+  const note = await storage.createNote({
+    ...noteData,
+    userId,
+  });
+  return res.status(201).json(note);
+}
 
 export default async function handler(
-  req: NextApiRequest,
+  req: AuthenticatedRequest,
   res: NextApiResponse
 ) {
   try {
     await initAuth(req, res);
 
-    if (!(req as any).isAuthenticated || !(req as any).isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const userId = (req as any).user?.claims?.sub;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
     if (req.method === "GET") {
-      const notes = await storage.getNotes(userId);
-      return res.json(notes);
+      return compose(requireAuth, requireRole("property_manager"))(handleGet)(req, res);
     }
 
     if (req.method === "POST") {
-      const noteData = req.body;
-      const note = await storage.createNote({
-        ...noteData,
-        userId,
-      });
-      return res.status(201).json(note);
+      return compose(
+        requireAuth,
+        requireRole("property_manager"),
+        validateBody(NoteSchema)
+      )(handlePost)(req, res);
     }
 
     return res.status(405).json({ message: "Method not allowed" });

@@ -1,48 +1,71 @@
 // API routes for single project (GET, PUT, DELETE)
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiResponse } from "next";
 import { initAuth } from "../../../../lib/authMiddleware";
 import { storage } from "../../../../../server/storage";
+import { compose, requireAuth, requireRole, validateBody } from "../../../../../server/middleware";
+import { AuthenticatedRequest } from "../../../../../server/types";
+import { ProjectUpdateSchema } from "../../../../../shared/validation";
+
+async function handleGet(req: AuthenticatedRequest, res: NextApiResponse) {
+  const userId = req.user!.id;
+  const projectId = parseInt(req.query.id as string);
+  if (isNaN(projectId)) {
+    return res.status(400).json({ message: "Invalid project ID" });
+  }
+  
+  const project = await storage.getProject(projectId, userId);
+  if (!project) {
+    return res.status(404).json({ message: "Project not found" });
+  }
+  return res.json(project);
+}
+
+async function handlePut(req: AuthenticatedRequest, res: NextApiResponse) {
+  const userId = req.user!.id;
+  const projectId = parseInt(req.query.id as string);
+  if (isNaN(projectId)) {
+    return res.status(400).json({ message: "Invalid project ID" });
+  }
+  
+  const project = await storage.updateProject(projectId, userId, req.body);
+  if (!project) {
+    return res.status(404).json({ message: "Project not found" });
+  }
+  return res.json(project);
+}
+
+async function handleDelete(req: AuthenticatedRequest, res: NextApiResponse) {
+  const userId = req.user!.id;
+  const projectId = parseInt(req.query.id as string);
+  if (isNaN(projectId)) {
+    return res.status(400).json({ message: "Invalid project ID" });
+  }
+  
+  await storage.deleteProject(projectId, userId);
+  return res.status(204).end();
+}
 
 export default async function handler(
-  req: NextApiRequest,
+  req: AuthenticatedRequest,
   res: NextApiResponse
 ) {
   try {
     await initAuth(req, res);
 
-    if (!(req as any).isAuthenticated || !(req as any).isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const userId = (req as any).user?.claims?.sub;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const projectId = parseInt(req.query.id as string);
-    if (isNaN(projectId)) {
-      return res.status(400).json({ message: "Invalid project ID" });
-    }
-
     if (req.method === "GET") {
-      const project = await storage.getProject(projectId, userId);
-      if (!project) {
-        return res.status(404).json({ message: "Project not found" });
-      }
-      return res.json(project);
+      return compose(requireAuth, requireRole("property_manager"))(handleGet)(req, res);
     }
 
     if (req.method === "PUT") {
-      const project = await storage.updateProject(projectId, userId, req.body);
-      if (!project) {
-        return res.status(404).json({ message: "Project not found" });
-      }
-      return res.json(project);
+      return compose(
+        requireAuth,
+        requireRole("property_manager"),
+        validateBody(ProjectUpdateSchema)
+      )(handlePut)(req, res);
     }
 
     if (req.method === "DELETE") {
-      await storage.deleteProject(projectId, userId);
-      return res.status(204).end();
+      return compose(requireAuth, requireRole("property_manager"))(handleDelete)(req, res);
     }
 
     return res.status(405).json({ message: "Method not allowed" });

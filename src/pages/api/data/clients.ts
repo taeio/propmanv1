@@ -1,36 +1,44 @@
 // API routes for clients (GET all, POST)
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiResponse } from "next";
 import { initAuth } from "../../../lib/authMiddleware";
 import { storage } from "../../../../server/storage";
+import { compose, requireAuth, requireRole, validateBody } from "../../../../server/middleware";
+import { AuthenticatedRequest } from "../../../../server/types";
+import { ClientSchema } from "../../../../shared/validation";
+
+async function handleGet(req: AuthenticatedRequest, res: NextApiResponse) {
+  const userId = req.user!.id;
+  const clients = await storage.getClients(userId);
+  return res.json(clients);
+}
+
+async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
+  const userId = req.user!.id;
+  const clientData = req.body;
+  const client = await storage.createClient({
+    ...clientData,
+    userId,
+  });
+  return res.status(201).json(client);
+}
 
 export default async function handler(
-  req: NextApiRequest,
+  req: AuthenticatedRequest,
   res: NextApiResponse
 ) {
   try {
     await initAuth(req, res);
 
-    if (!(req as any).isAuthenticated || !(req as any).isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const userId = (req as any).user?.claims?.sub;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
     if (req.method === "GET") {
-      const clients = await storage.getClients(userId);
-      return res.json(clients);
+      return compose(requireAuth, requireRole("property_manager"))(handleGet)(req, res);
     }
 
     if (req.method === "POST") {
-      const clientData = req.body;
-      const client = await storage.createClient({
-        ...clientData,
-        userId,
-      });
-      return res.status(201).json(client);
+      return compose(
+        requireAuth,
+        requireRole("property_manager"),
+        validateBody(ClientSchema)
+      )(handlePost)(req, res);
     }
 
     return res.status(405).json({ message: "Method not allowed" });

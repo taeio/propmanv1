@@ -1,45 +1,60 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiResponse } from "next";
 import { storage } from "../../../../server/storage";
-import { requireAuth } from "../../../lib/authMiddleware";
+import { compose, requireAuth, validateBody } from "../../../../server/middleware";
+import { AuthenticatedRequest } from "../../../../server/types";
+import { UserProfileSchema } from "../../../../shared/validation";
+import { initAuth } from "../../../lib/authMiddleware";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const user = await requireAuth(req, res);
-  if (!user) return;
+async function handleGet(req: AuthenticatedRequest, res: NextApiResponse): Promise<void> {
+  const userId = req.user!.id;
+  const userProfile = await storage.getUser(userId);
+  if (!userProfile) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  res.status(200).json(userProfile);
+}
 
-  if (req.method === "GET") {
-    try {
-      const userProfile = await storage.getUser(user.id);
-      if (!userProfile) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      return res.status(200).json(userProfile);
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      return res.status(500).json({ error: "Failed to fetch user profile" });
-    }
+async function handlePut(req: AuthenticatedRequest, res: NextApiResponse): Promise<void> {
+  const userId = req.user!.id;
+  const { firstName, lastName, email, themePreference } = req.body;
+  
+  const updatedUser = await storage.updateUserProfile(userId, {
+    firstName,
+    lastName,
+    email,
+    themePreference,
+  });
+
+  if (!updatedUser) {
+    res.status(404).json({ error: "User not found" });
+    return;
   }
 
-  if (req.method === "PUT") {
-    try {
-      const { firstName, lastName, email, themePreference } = req.body;
-      
-      const updatedUser = await storage.updateUserProfile(user.id, {
-        firstName,
-        lastName,
-        email,
-        themePreference,
-      });
+  res.status(200).json(updatedUser);
+}
 
-      if (!updatedUser) {
-        return res.status(404).json({ error: "User not found" });
-      }
+export default async function handler(
+  req: AuthenticatedRequest,
+  res: NextApiResponse
+) {
+  try {
+    await initAuth(req, res);
 
-      return res.status(200).json(updatedUser);
-    } catch (error) {
-      console.error("Error updating user profile:", error);
-      return res.status(500).json({ error: "Failed to update user profile" });
+    if (req.method === "GET") {
+      return compose(requireAuth)(handleGet)(req, res);
     }
-  }
 
-  return res.status(405).json({ error: "Method not allowed" });
+    if (req.method === "PUT") {
+      return compose(
+        requireAuth,
+        validateBody(UserProfileSchema)
+      )(handlePut)(req, res);
+    }
+
+    return res.status(405).json({ error: "Method not allowed" });
+  } catch (error) {
+    console.error("Error with user profile:", error);
+    return res.status(500).json({ error: "Failed to process request" });
+  }
 }

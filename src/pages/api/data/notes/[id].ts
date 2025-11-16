@@ -1,48 +1,71 @@
 // API routes for single note (GET, PUT, DELETE)
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiResponse } from "next";
 import { initAuth } from "../../../../lib/authMiddleware";
 import { storage } from "../../../../../server/storage";
+import { compose, requireAuth, requireRole, validateBody } from "../../../../../server/middleware";
+import { AuthenticatedRequest } from "../../../../../server/types";
+import { NoteUpdateSchema } from "../../../../../shared/validation";
+
+async function handleGet(req: AuthenticatedRequest, res: NextApiResponse) {
+  const userId = req.user!.id;
+  const noteId = parseInt(req.query.id as string);
+  if (isNaN(noteId)) {
+    return res.status(400).json({ message: "Invalid note ID" });
+  }
+  
+  const note = await storage.getNote(noteId, userId);
+  if (!note) {
+    return res.status(404).json({ message: "Note not found" });
+  }
+  return res.json(note);
+}
+
+async function handlePut(req: AuthenticatedRequest, res: NextApiResponse) {
+  const userId = req.user!.id;
+  const noteId = parseInt(req.query.id as string);
+  if (isNaN(noteId)) {
+    return res.status(400).json({ message: "Invalid note ID" });
+  }
+  
+  const note = await storage.updateNote(noteId, userId, req.body);
+  if (!note) {
+    return res.status(404).json({ message: "Note not found" });
+  }
+  return res.json(note);
+}
+
+async function handleDelete(req: AuthenticatedRequest, res: NextApiResponse) {
+  const userId = req.user!.id;
+  const noteId = parseInt(req.query.id as string);
+  if (isNaN(noteId)) {
+    return res.status(400).json({ message: "Invalid note ID" });
+  }
+  
+  await storage.deleteNote(noteId, userId);
+  return res.status(204).end();
+}
 
 export default async function handler(
-  req: NextApiRequest,
+  req: AuthenticatedRequest,
   res: NextApiResponse
 ) {
   try {
     await initAuth(req, res);
 
-    if (!(req as any).isAuthenticated || !(req as any).isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const userId = (req as any).user?.claims?.sub;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const noteId = parseInt(req.query.id as string);
-    if (isNaN(noteId)) {
-      return res.status(400).json({ message: "Invalid note ID" });
-    }
-
     if (req.method === "GET") {
-      const note = await storage.getNote(noteId, userId);
-      if (!note) {
-        return res.status(404).json({ message: "Note not found" });
-      }
-      return res.json(note);
+      return compose(requireAuth, requireRole("property_manager"))(handleGet)(req, res);
     }
 
     if (req.method === "PUT") {
-      const note = await storage.updateNote(noteId, userId, req.body);
-      if (!note) {
-        return res.status(404).json({ message: "Note not found" });
-      }
-      return res.json(note);
+      return compose(
+        requireAuth,
+        requireRole("property_manager"),
+        validateBody(NoteUpdateSchema)
+      )(handlePut)(req, res);
     }
 
     if (req.method === "DELETE") {
-      await storage.deleteNote(noteId, userId);
-      return res.status(204).end();
+      return compose(requireAuth, requireRole("property_manager"))(handleDelete)(req, res);
     }
 
     return res.status(405).json({ message: "Method not allowed" });

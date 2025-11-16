@@ -1,45 +1,64 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiResponse } from "next";
 import { initAuth } from "../../../../lib/authMiddleware";
 import { storage } from "../../../../../server/storage";
+import { compose, requireAuth, requireRole, validateBody } from "../../../../../server/middleware";
+import { AuthenticatedRequest } from "../../../../../server/types";
+import { PaymentSchema } from "../../../../../shared/validation";
+
+async function handleGet(req: AuthenticatedRequest, res: NextApiResponse): Promise<void> {
+  const userId = req.user!.id;
+  const id = parseInt(req.query.id as string, 10);
+  
+  const payment = await storage.getPayment(id, userId);
+  if (!payment) {
+    res.status(404).json({ error: "Payment not found" });
+    return;
+  }
+  res.json(payment);
+}
+
+async function handlePut(req: AuthenticatedRequest, res: NextApiResponse): Promise<void> {
+  const userId = req.user!.id;
+  const id = parseInt(req.query.id as string, 10);
+  const paymentData = req.body;
+  
+  const payment = await storage.updatePayment(id, userId, paymentData);
+  if (!payment) {
+    res.status(404).json({ error: "Payment not found" });
+    return;
+  }
+  res.json(payment);
+}
+
+async function handleDelete(req: AuthenticatedRequest, res: NextApiResponse): Promise<void> {
+  const userId = req.user!.id;
+  const id = parseInt(req.query.id as string, 10);
+  
+  await storage.deletePayment(id, userId);
+  res.status(204).end();
+}
 
 export default async function handler(
-  req: NextApiRequest,
+  req: AuthenticatedRequest,
   res: NextApiResponse
 ) {
   try {
     await initAuth(req, res);
 
-    if (!(req as any).isAuthenticated || !(req as any).isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const userId = (req as any).user?.claims?.sub;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const id = parseInt(req.query.id as string, 10);
-
     if (req.method === "GET") {
-      const payment = await storage.getPayment(id, userId);
-      if (!payment) {
-        return res.status(404).json({ error: "Payment not found" });
-      }
-      return res.json(payment);
+      return compose(requireAuth, requireRole("property_manager"))(handleGet)(req, res);
     }
 
     if (req.method === "PUT") {
-      const paymentData = req.body;
-      const payment = await storage.updatePayment(id, userId, paymentData);
-      if (!payment) {
-        return res.status(404).json({ error: "Payment not found" });
-      }
-      return res.json(payment);
+      return compose(
+        requireAuth,
+        requireRole("property_manager"),
+        validateBody(PaymentSchema.partial())
+      )(handlePut)(req, res);
     }
 
     if (req.method === "DELETE") {
-      await storage.deletePayment(id, userId);
-      return res.status(204).end();
+      return compose(requireAuth, requireRole("property_manager"))(handleDelete)(req, res);
     }
 
     return res.status(405).json({ message: "Method not allowed" });
