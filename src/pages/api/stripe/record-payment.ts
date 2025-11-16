@@ -45,6 +45,8 @@ async function handlePost(req: AuthenticatedRequest, res: NextApiResponse): Prom
     amount,
     paymentDate: new Date(),
     notes: `Stripe payment: ${paymentIntentId}`,
+    stripePaymentIntentId: paymentIntentId,
+    status: "succeeded",
   });
 
   res.status(200).json({ success: true });

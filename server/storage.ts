@@ -251,6 +251,23 @@ export class DatabaseStorage implements IStorage {
     await db.delete(payments).where(and(eq(payments.id, id), eq(payments.userId, userId)));
   }
 
+  async getPaymentByStripeId(stripePaymentIntentId: string): Promise<Payment | undefined> {
+    const [payment] = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.stripePaymentIntentId, stripePaymentIntentId));
+    return payment;
+  }
+
+  async updatePaymentStatus(id: number, userId: string, status: string): Promise<Payment | undefined> {
+    const [payment] = await db
+      .update(payments)
+      .set({ status, updatedAt: new Date() })
+      .where(and(eq(payments.id, id), eq(payments.userId, userId)))
+      .returning();
+    return payment;
+  }
+
   async getMaintenanceIssues(userId: string): Promise<MaintenanceIssue[]> {
     return db
       .select({ issue: maintenanceIssues })

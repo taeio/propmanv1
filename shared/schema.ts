@@ -83,6 +83,8 @@ export const payments = pgTable("payments", {
   amount: integer("amount").notNull(),
   paymentDate: timestamp("payment_date").notNull(),
   notes: varchar("notes"),
+  stripePaymentIntentId: varchar("stripe_payment_intent_id").unique(),
+  status: varchar("status").notNull().default("succeeded"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

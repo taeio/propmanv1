@@ -71,11 +71,18 @@ Preferred communication style: Simple, everyday language.
 - **Connection Status Display**: Settings page shows real-time Stripe account status including details submitted, charges enabled, and payouts enabled.
 - **Security**: Server-side validation ensures rent amounts are derived from database (not client), payment intents are verified with Stripe before recording, and connected account IDs are validated with `acct_` prefix.
 - **Error Handling**: Clear user-facing error messages when property managers haven't connected Stripe or haven't completed onboarding.
+- **Webhook Integration**: Real-time payment event processing via `/api/stripe/webhooks` endpoint with signature verification
+  - Handles `payment_intent.succeeded` - automatically records successful payments
+  - Handles `payment_intent.payment_failed` - tracks failed payment attempts
+  - Handles `charge.refunded` - updates payment status when refunds occur
+  - Handles `charge.dispute.created` - marks payments as disputed for investigation
+- **Payment Status Tracking**: Database stores payment status (succeeded, failed, refunded, disputed) and Stripe payment intent IDs for reconciliation
 - **API Endpoints**: 
   - `/api/stripe/connect/create-account-link` - Creates Stripe onboarding links
   - `/api/stripe/connect/status` - Retrieves connected account status
   - `/api/stripe/create-payment-intent` - Creates payment intents with Connect routing
   - `/api/stripe/record-payment` - Records payments after Stripe verification
+  - `/api/stripe/webhooks` - Handles real-time Stripe events
 
 ### Tenant Dashboard (`/tenant`)
 - **Separate Interface**: Dedicated tenant-facing dashboard with distinct UI design (indigo color scheme vs. property manager's red/silver).
