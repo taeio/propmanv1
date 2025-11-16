@@ -59,11 +59,8 @@ export function withRateLimit(config: RateLimitConfig) {
   return (handler: ApiHandler): ApiHandler => {
     const limiter = createRateLimit(config);
     return async (req: AuthenticatedRequest, res: NextApiResponse) => {
-      return new Promise<void>((resolve) => {
-        limiter(req as any, res, async () => {
-          await handler(req, res);
-          resolve();
-        });
+      await limiter(req as any, res, async () => {
+        await handler(req, res);
       });
     };
   };

@@ -48,6 +48,9 @@ export function rateLimit(config: RateLimitConfig) {
         count: 1,
         resetTime: now + config.windowMs,
       };
+      res.setHeader('X-RateLimit-Limit', config.maxRequests.toString());
+      res.setHeader('X-RateLimit-Remaining', (config.maxRequests - 1).toString());
+      res.setHeader('X-RateLimit-Reset', store[key].resetTime.toString());
       return next();
     }
 
@@ -56,6 +59,9 @@ export function rateLimit(config: RateLimitConfig) {
         count: 1,
         resetTime: now + config.windowMs,
       };
+      res.setHeader('X-RateLimit-Limit', config.maxRequests.toString());
+      res.setHeader('X-RateLimit-Remaining', (config.maxRequests - 1).toString());
+      res.setHeader('X-RateLimit-Reset', store[key].resetTime.toString());
       return next();
     }
 
