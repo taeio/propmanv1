@@ -1,7 +1,7 @@
 import type { NextApiResponse } from "next";
 import { initAuth } from "../../../../lib/authMiddleware";
 import { storage } from "../../../../../server/storage";
-import { compose, requireAuth, requireRole, validateBody } from "../../../../../server/middleware";
+import { compose, requireAuth, requireRole, validateBody, withRateLimit } from "../../../../../server/middleware";
 import { AuthenticatedRequest } from "../../../../../server/types";
 import { PaymentSchema } from "../../../../../shared/validation";
 
@@ -46,11 +46,16 @@ export default async function handler(
     await initAuth(req, res);
 
     if (req.method === "GET") {
-      return compose(requireAuth, requireRole("property_manager"))(handleGet)(req, res);
+      return compose(
+        withRateLimit({ windowMs: 60000, maxRequests: 100 }),
+        requireAuth,
+        requireRole("property_manager")
+      )(handleGet)(req, res);
     }
 
     if (req.method === "PUT") {
       return compose(
+        withRateLimit({ windowMs: 60000, maxRequests: 30 }),
         requireAuth,
         requireRole("property_manager"),
         validateBody(PaymentSchema.partial())
@@ -58,7 +63,11 @@ export default async function handler(
     }
 
     if (req.method === "DELETE") {
-      return compose(requireAuth, requireRole("property_manager"))(handleDelete)(req, res);
+      return compose(
+        withRateLimit({ windowMs: 60000, maxRequests: 30 }),
+        requireAuth,
+        requireRole("property_manager")
+      )(handleDelete)(req, res);
     }
 
     return res.status(405).json({ message: "Method not allowed" });

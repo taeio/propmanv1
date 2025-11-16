@@ -1,48 +1,45 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import passport from "passport";
 import { initAuth } from "../../../lib/authMiddleware";
 import { storage } from "../../../../server/storage";
 import { hashPassword } from "../../../../server/localAuth";
-import { authRateLimit } from "../../../../server/rateLimit";
+import { withRateLimit } from "../../../../server/middleware";
+import { AuthenticatedRequest } from "../../../../server/types";
 
 async function registerHandler(
-  req: NextApiRequest,
+  req: AuthenticatedRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+  const { username, password, email, firstName, lastName, role } = req.body;
+
+  if (!username || !password) {
+    res.status(400).json({ error: "Username and password are required" });
+    return;
   }
 
-  try {
-    await initAuth(req, res);
+  const existingUser = await storage.getUserByUsername(username);
+  if (existingUser) {
+    res.status(400).json({ error: "Username already exists" });
+    return;
+  }
 
-    const { username, password, email, firstName, lastName, role } = req.body;
+  const hashedPassword = await hashPassword(password);
+  
+  const user = await storage.createUser({
+    username,
+    password: hashedPassword,
+    email: email || null,
+    firstName: firstName || null,
+    lastName: lastName || null,
+    role: role || "property_manager",
+    themePreference: "light",
+  });
 
-    if (!username || !password) {
-      return res.status(400).json({ error: "Username and password are required" });
-    }
-
-    const existingUser = await storage.getUserByUsername(username);
-    if (existingUser) {
-      return res.status(400).json({ error: "Username already exists" });
-    }
-
-    const hashedPassword = await hashPassword(password);
-    
-    const user = await storage.createUser({
-      username,
-      password: hashedPassword,
-      email: email || null,
-      firstName: firstName || null,
-      lastName: lastName || null,
-      role: role || "property_manager",
-      themePreference: "light",
-    });
-
+  return new Promise<void>((resolve, reject) => {
     (req as any).login(user, (err: Error) => {
       if (err) {
         console.error("Login error after registration:", err);
-        return res.status(500).json({ error: "Registration succeeded but login failed" });
+        res.status(500).json({ error: "Registration succeeded but login failed" });
+        return reject(err);
       }
       
       res.status(201).json({
@@ -53,21 +50,25 @@ async function registerHandler(
         lastName: user.lastName,
         role: user.role,
       });
-    });
-  } catch (error) {
-    console.error("Registration error:", error);
-    res.status(500).json({ error: "Registration failed" });
-  }
-}
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  return new Promise<void>((resolve) => {
-    authRateLimit(req, res, async () => {
-      await registerHandler(req, res);
       resolve();
     });
   });
+}
+
+export default async function handler(
+  req: AuthenticatedRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  try {
+    await initAuth(req, res);
+    
+    return withRateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 })(registerHandler)(req, res);
+  } catch (error) {
+    console.error("Registration error:", error);
+    return res.status(500).json({ error: "Registration failed" });
+  }
 }

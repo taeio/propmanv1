@@ -1,7 +1,7 @@
 import type { NextApiResponse } from "next";
 import { initAuth } from "../../../lib/authMiddleware";
 import { storage } from "../../../../server/storage";
-import { compose, requireAuth, requireRole, validateBody } from "../../../../server/middleware";
+import { compose, requireAuth, requireRole, validateBody, withRateLimit } from "../../../../server/middleware";
 import { AuthenticatedRequest } from "../../../../server/types";
 import { MaintenanceIssueSchema, MaintenanceIssueUpdateSchema } from "../../../../shared/validation";
 
@@ -63,11 +63,15 @@ export default async function handler(
     await initAuth(req, res);
 
     if (req.method === "GET") {
-      return compose(requireAuth)(handleGet)(req, res);
+      return compose(
+        withRateLimit({ windowMs: 60000, maxRequests: 100 }),
+        requireAuth
+      )(handleGet)(req, res);
     }
 
     if (req.method === "POST") {
       return compose(
+        withRateLimit({ windowMs: 60000, maxRequests: 30 }),
         requireAuth,
         validateBody(MaintenanceIssueSchema)
       )(handlePost)(req, res);
@@ -75,6 +79,7 @@ export default async function handler(
 
     if (req.method === "PUT") {
       return compose(
+        withRateLimit({ windowMs: 60000, maxRequests: 30 }),
         requireAuth,
         requireRole("property_manager"),
         validateBody(MaintenanceIssueUpdateSchema)
@@ -83,6 +88,7 @@ export default async function handler(
 
     if (req.method === "DELETE") {
       return compose(
+        withRateLimit({ windowMs: 60000, maxRequests: 30 }),
         requireAuth,
         requireRole("property_manager")
       )(handleDelete)(req, res);

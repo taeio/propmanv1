@@ -37,10 +37,38 @@ function getClientIdentifier(req: NextApiRequest): string {
   return userId ? `user:${userId}` : `ip:${ip}`;
 }
 
+function normalizeRoute(url: string | undefined): string {
+  if (!url) return '/unknown';
+  
+  const pathname = url.split('?')[0];
+  
+  const segments = pathname.split('/').filter(Boolean);
+  
+  const staticSegments = new Set([
+    'api', 'auth', 'data', 'stripe', 'user', 'connect',
+    'login', 'register', 'logout', 'profile', 'hello',
+    'create-payment-intent', 'record-payment', 'webhooks',
+    'create-account-link', 'status',
+    'clients', 'projects', 'notes', 'payments',
+    'maintenance-issues', 'maintenance-comments'
+  ]);
+  
+  const normalized = segments.map((segment) => {
+    if (staticSegments.has(segment)) {
+      return segment;
+    }
+    
+    return '[id]';
+  }).join('/');
+  
+  return `/${normalized}`;
+}
+
 export function rateLimit(config: RateLimitConfig) {
   return async (req: NextApiRequest, res: NextApiResponse, next: () => void | Promise<void>) => {
     const identifier = getClientIdentifier(req);
-    const key = `${identifier}:${req.url}`;
+    const routePattern = normalizeRoute(req.url);
+    const key = `${identifier}:${req.method}:${routePattern}`;
     const now = Date.now();
 
     if (!store[key]) {
@@ -100,10 +128,16 @@ export const authRateLimit = rateLimit({
   message: 'Too many authentication attempts, please try again later.',
 });
 
-export const apiRateLimit = rateLimit({
+export const apiGetRateLimit = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  maxRequests: 60,
-  message: 'Too many requests, please slow down.',
+  maxRequests: 100,
+  message: 'Too many GET requests, please slow down.',
+});
+
+export const apiPostRateLimit = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  maxRequests: 30,
+  message: 'Too many POST requests, please slow down.',
 });
 
 export const paymentRateLimit = rateLimit({

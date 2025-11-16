@@ -5,7 +5,6 @@ import { storage } from "../../../../server/storage";
 import { compose, requireAuth, requireRole, validateBody, withRateLimit } from "../../../../server/middleware";
 import { AuthenticatedRequest } from "../../../../server/types";
 import { ClientSchema } from "../../../../shared/validation";
-import { apiRateLimit } from "../../../../server/rateLimit";
 
 async function handleGet(req: AuthenticatedRequest, res: NextApiResponse) {
   const userId = req.user!.id;
