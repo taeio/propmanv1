@@ -66,7 +66,11 @@ export default async function handler(
   try {
     await initAuth(req, res);
     
-    return withRateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 })(registerHandler)(req, res);
+    return withRateLimit({ 
+      windowMs: 15 * 60 * 1000, 
+      maxRequests: 10,
+      routePattern: '/api/auth/register'
+    })(registerHandler)(req, res);
   } catch (error) {
     console.error("Registration error:", error);
     return res.status(500).json({ error: "Registration failed" });

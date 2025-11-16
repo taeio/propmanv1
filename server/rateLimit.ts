@@ -24,6 +24,7 @@ export interface RateLimitConfig {
   windowMs: number;
   maxRequests: number;
   message?: string;
+  routePattern?: string;
 }
 
 function getClientIdentifier(req: NextApiRequest): string {
@@ -67,7 +68,7 @@ function normalizeRoute(url: string | undefined): string {
 export function rateLimit(config: RateLimitConfig) {
   return async (req: NextApiRequest, res: NextApiResponse, next: () => void | Promise<void>) => {
     const identifier = getClientIdentifier(req);
-    const routePattern = normalizeRoute(req.url);
+    const routePattern = config.routePattern || normalizeRoute(req.url);
     const key = `${identifier}:${req.method}:${routePattern}`;
     const now = Date.now();
 

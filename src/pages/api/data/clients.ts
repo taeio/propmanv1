@@ -31,7 +31,7 @@ export default async function handler(
 
     if (req.method === "GET") {
       return compose(
-        withRateLimit({ windowMs: 60000, maxRequests: 100 }),
+        withRateLimit({ windowMs: 60000, maxRequests: 100, routePattern: '/api/data/clients' }),
         requireAuth,
         requireRole("property_manager")
       )(handleGet)(req, res);
@@ -39,7 +39,7 @@ export default async function handler(
 
     if (req.method === "POST") {
       return compose(
-        withRateLimit({ windowMs: 60000, maxRequests: 30 }),
+        withRateLimit({ windowMs: 60000, maxRequests: 30, routePattern: '/api/data/clients' }),
         requireAuth,
         requireRole("property_manager"),
         validateBody(ClientSchema)

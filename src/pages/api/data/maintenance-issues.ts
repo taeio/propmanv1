@@ -64,14 +64,14 @@ export default async function handler(
 
     if (req.method === "GET") {
       return compose(
-        withRateLimit({ windowMs: 60000, maxRequests: 100 }),
+        withRateLimit({ windowMs: 60000, maxRequests: 100, routePattern: '/api/data/maintenance-issues' }),
         requireAuth
       )(handleGet)(req, res);
     }
 
     if (req.method === "POST") {
       return compose(
-        withRateLimit({ windowMs: 60000, maxRequests: 30 }),
+        withRateLimit({ windowMs: 60000, maxRequests: 30, routePattern: '/api/data/maintenance-issues' }),
         requireAuth,
         validateBody(MaintenanceIssueSchema)
       )(handlePost)(req, res);
@@ -79,7 +79,7 @@ export default async function handler(
 
     if (req.method === "PUT") {
       return compose(
-        withRateLimit({ windowMs: 60000, maxRequests: 30 }),
+        withRateLimit({ windowMs: 60000, maxRequests: 30, routePattern: '/api/data/maintenance-issues' }),
         requireAuth,
         requireRole("property_manager"),
         validateBody(MaintenanceIssueUpdateSchema)
@@ -88,7 +88,7 @@ export default async function handler(
 
     if (req.method === "DELETE") {
       return compose(
-        withRateLimit({ windowMs: 60000, maxRequests: 30 }),
+        withRateLimit({ windowMs: 60000, maxRequests: 30, routePattern: '/api/data/maintenance-issues' }),
         requireAuth,
         requireRole("property_manager")
       )(handleDelete)(req, res);

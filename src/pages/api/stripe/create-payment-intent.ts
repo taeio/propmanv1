@@ -93,7 +93,7 @@ export default async function handler(
   try {
     await initAuth(req, res);
     return compose(
-      withRateLimit({ windowMs: 5 * 60 * 1000, maxRequests: 10 }),
+      withRateLimit({ windowMs: 5 * 60 * 1000, maxRequests: 10, routePattern: '/api/stripe/create-payment-intent' }),
       requireAuth,
       validateBody(StripePaymentIntentSchema)
     )(handlePost)(req, res);

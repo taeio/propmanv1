@@ -65,7 +65,11 @@ export default async function handler(
   try {
     await initAuth(req, res);
     
-    return withRateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 })(loginHandler)(req, res);
+    return withRateLimit({ 
+      windowMs: 15 * 60 * 1000, 
+      maxRequests: 10,
+      routePattern: '/api/auth/login'
+    })(loginHandler)(req, res);
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({ error: "Authentication failed" });
