@@ -2,7 +2,7 @@ import type { NextApiResponse } from "next";
 import Stripe from "stripe";
 import { initAuth } from "../../../lib/authMiddleware";
 import { storage } from "../../../../server/storage";
-import { compose, requireAuth, validateBody } from "../../../../server/middleware";
+import { compose, requireAuth, validateBody, withRateLimit } from "../../../../server/middleware";
 import { AuthenticatedRequest } from "../../../../server/types";
 import { StripeRecordPaymentSchema } from "../../../../shared/validation";
 
@@ -63,6 +63,7 @@ export default async function handler(
   try {
     await initAuth(req, res);
     return compose(
+      withRateLimit({ windowMs: 5 * 60 * 1000, maxRequests: 10 }),
       requireAuth,
       validateBody(StripeRecordPaymentSchema)
     )(handlePost)(req, res);
