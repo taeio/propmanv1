@@ -1,6 +1,7 @@
 import { NextApiResponse } from 'next';
 import { z, ZodError } from 'zod';
 import { AuthenticatedRequest } from './types';
+import { RateLimitConfig, rateLimit as createRateLimit } from './rateLimit';
 
 export type ApiHandler = (req: AuthenticatedRequest, res: NextApiResponse) => Promise<void> | void;
 
@@ -50,6 +51,20 @@ export function requireRole(...allowedRoles: string[]) {
       }
       
       return handler(req, res);
+    };
+  };
+}
+
+export function withRateLimit(config: RateLimitConfig) {
+  return (handler: ApiHandler): ApiHandler => {
+    const limiter = createRateLimit(config);
+    return async (req: AuthenticatedRequest, res: NextApiResponse) => {
+      return new Promise<void>((resolve) => {
+        limiter(req as any, res, async () => {
+          await handler(req, res);
+          resolve();
+        });
+      });
     };
   };
 }

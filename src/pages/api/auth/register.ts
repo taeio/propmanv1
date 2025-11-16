@@ -3,8 +3,9 @@ import passport from "passport";
 import { initAuth } from "../../../lib/authMiddleware";
 import { storage } from "../../../../server/storage";
 import { hashPassword } from "../../../../server/localAuth";
+import { authRateLimit } from "../../../../server/rateLimit";
 
-export default async function handler(
+async function registerHandler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -57,4 +58,16 @@ export default async function handler(
     console.error("Registration error:", error);
     res.status(500).json({ error: "Registration failed" });
   }
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return new Promise<void>((resolve) => {
+    authRateLimit(req, res, async () => {
+      await registerHandler(req, res);
+      resolve();
+    });
+  });
 }

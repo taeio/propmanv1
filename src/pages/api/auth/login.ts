@@ -2,10 +2,11 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import passport from "passport";
 import { initAuth } from "../../../lib/authMiddleware";
 import { setupLocalAuth } from "../../../../server/localAuth";
+import { authRateLimit } from "../../../../server/rateLimit";
 
 let isLocalStrategyRegistered = false;
 
-export default async function handler(
+async function loginHandler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -51,4 +52,16 @@ export default async function handler(
     console.error("Login error:", error);
     res.status(500).json({ error: "Authentication failed" });
   }
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return new Promise<void>((resolve) => {
+    authRateLimit(req, res, async () => {
+      await loginHandler(req, res);
+      resolve();
+    });
+  });
 }
