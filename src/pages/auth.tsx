@@ -136,6 +136,7 @@ export default function AuthPage() {
                   value={formData.username}
                   onChange={handleChange}
                   required
+                  autoComplete="username"
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   placeholder="Enter your username"
                 />
@@ -155,6 +156,7 @@ export default function AuthPage() {
                   value={formData.password}
                   onChange={handleChange}
                   required
+                  autoComplete={isLogin ? "current-password" : "new-password"}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   placeholder="Enter your password"
                 />
@@ -211,6 +213,7 @@ export default function AuthPage() {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
+                      autoComplete="email"
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       placeholder="Enter your email"
                     />

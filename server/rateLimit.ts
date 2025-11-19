@@ -1,13 +1,15 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { storage } from "./storage";
+import { logger } from "./logger";
 
 const CLEANUP_INTERVAL = 5 * 60 * 1000; // Clean up old entries every 5 minutes
 
 setInterval(async () => {
   try {
     await storage.cleanupExpiredRateLimits();
+    logger.debug('Rate limit cleanup completed');
   } catch (error) {
-    console.error('[Rate Limit] Cleanup error:', error);
+    logger.error('Rate limit cleanup failed', {}, error as Error);
   }
 }, CLEANUP_INTERVAL);
 
@@ -58,9 +60,10 @@ function normalizeRoute(url: string | undefined): string {
 
 export function rateLimit(config: RateLimitConfig) {
   return async (req: NextApiRequest, res: NextApiResponse, next: () => void | Promise<void>) => {
+    const identifier = getClientIdentifier(req);
+    const routePattern = config.routePattern || normalizeRoute(req.url);
+    
     try {
-      const identifier = getClientIdentifier(req);
-      const routePattern = config.routePattern || normalizeRoute(req.url);
       const key = `${identifier}:${req.method}:${routePattern}`;
       const now = Date.now();
       const resetTime = new Date(now + config.windowMs);
@@ -82,6 +85,14 @@ export function rateLimit(config: RateLimitConfig) {
         const retryAfter = Math.ceil((resetTimeMs - now) / 1000);
         res.setHeader('Retry-After', retryAfter.toString());
         
+        logger.warn('Rate limit exceeded', {
+          identifier,
+          endpoint: routePattern,
+          method: req.method,
+          count,
+          limit: config.maxRequests,
+        });
+        
         return res.status(429).json({
           error: config.message || 'Too many requests, please try again later.',
           retryAfter,
@@ -90,7 +101,7 @@ export function rateLimit(config: RateLimitConfig) {
 
       return next();
     } catch (error) {
-      console.error('[Rate Limit] Error:', error);
+      logger.error('Rate limit error', { endpoint: routePattern, method: req.method }, error as Error);
       return next();
     }
   };
