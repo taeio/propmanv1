@@ -1,6 +1,6 @@
 import type { NextApiResponse } from "next";
 import { storage } from "../../../../server/storage";
-import { compose, requireAuth, validateBody } from "../../../../server/middleware";
+import { compose, requireCsrf, requireAuth, validateBody } from "../../../../server/middleware";
 import { AuthenticatedRequest } from "../../../../server/types";
 import { UserProfileSchema } from "../../../../shared/validation";
 import { initAuth } from "../../../lib/authMiddleware";

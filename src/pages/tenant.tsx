@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchWithCsrf } from "@/lib/csrf";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wrench, Settings, LogOut, User, Moon, Sun } from "lucide-react";
 import { assignPriorityFromMessage } from "@/utils/priorityAssignment";
@@ -112,7 +113,7 @@ function TenantDashboard() {
   };
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetchWithCsrf("/api/auth/logout", { method: "POST" });
     useAppStore.getState().setAuthenticated(false);
     router.push("/auth");
   };

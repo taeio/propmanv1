@@ -5,6 +5,8 @@ import { RateLimitConfig, rateLimit as createRateLimit } from './rateLimit';
 
 export type ApiHandler = (req: AuthenticatedRequest, res: NextApiResponse) => Promise<void> | void;
 
+export { requireCsrf } from './csrf';
+
 export function validateBody<T extends z.ZodType>(schema: T) {
   return (handler: ApiHandler): ApiHandler => {
     return async (req: AuthenticatedRequest, res: NextApiResponse) => {

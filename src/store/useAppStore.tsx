@@ -1,6 +1,7 @@
 // /store/useAppStore.tsx
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { fetchWithCsrf } from "../lib/csrf";
 
 type Project = {
   id: number;
@@ -221,21 +222,21 @@ export const useAppStore = create<AppStore>()(
           const processBatch = async (items: any[], endpoint: string) => {
             const promises = items.map((item) => {
               if ((item as any)._deleted) {
-                return fetch(`${endpoint}/${item.id}`, { method: "DELETE" });
+                return fetchWithCsrf(`${endpoint}/${item.id}`, { method: "DELETE" });
               } else if (item.id && typeof item.id === 'number' && item.id > 1000000000) {
-                return fetch(endpoint, {
+                return fetchWithCsrf(endpoint, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(stripMetadata(item)),
                 });
               } else if (item.id) {
-                return fetch(`${endpoint}/${item.id}`, {
+                return fetchWithCsrf(`${endpoint}/${item.id}`, {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(stripMetadata(item)),
                 });
               } else {
-                return fetch(endpoint, {
+                return fetchWithCsrf(endpoint, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(stripMetadata(item)),
@@ -312,7 +313,7 @@ export const useAppStore = create<AppStore>()(
         }
 
         try {
-          const response = await fetch("/api/user/profile", {
+          const response = await fetchWithCsrf("/api/user/profile", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -360,7 +361,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          const response = await fetch("/api/data/projects", {
+          const response = await fetchWithCsrf("/api/data/projects", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -378,7 +379,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          const response = await fetch(`/api/data/projects/${id}`, {
+          const response = await fetchWithCsrf(`/api/data/projects/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -400,7 +401,8 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          await fetch(`/api/data/projects/${id}`, { method: "DELETE" });
+          await fetchWithCsrf(`/api/data/projects/${id}`, {
+            method: "DELETE" });
           set((state) => ({
             projects: state.projects.filter((p) => p.id !== id),
           }));
@@ -425,7 +427,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          const response = await fetch("/api/data/clients", {
+          const response = await fetchWithCsrf("/api/data/clients", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -443,7 +445,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          const response = await fetch(`/api/data/clients/${id}`, {
+          const response = await fetchWithCsrf(`/api/data/clients/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -465,7 +467,8 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          await fetch(`/api/data/clients/${id}`, { method: "DELETE" });
+          await fetchWithCsrf(`/api/data/clients/${id}`, {
+            method: "DELETE" });
           set((state) => ({
             clients: state.clients.filter((c) => c.id !== id),
           }));
@@ -490,7 +493,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          const response = await fetch("/api/data/notes", {
+          const response = await fetchWithCsrf("/api/data/notes", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -508,7 +511,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          const response = await fetch(`/api/data/notes/${id}`, {
+          const response = await fetchWithCsrf(`/api/data/notes/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -530,7 +533,8 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated} = get();
         
         if (isAuthenticated) {
-          await fetch(`/api/data/notes/${id}`, { method: "DELETE" });
+          await fetchWithCsrf(`/api/data/notes/${id}`, {
+            method: "DELETE" });
           set((state) => ({
             notes: state.notes.filter((n) => n.id !== id),
           }));
@@ -555,7 +559,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          const response = await fetch("/api/data/payments", {
+          const response = await fetchWithCsrf("/api/data/payments", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -573,7 +577,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          const response = await fetch(`/api/data/payments/${id}`, {
+          const response = await fetchWithCsrf(`/api/data/payments/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -595,7 +599,8 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          await fetch(`/api/data/payments/${id}`, { method: "DELETE" });
+          await fetchWithCsrf(`/api/data/payments/${id}`, {
+            method: "DELETE" });
           set((state) => ({
             payments: state.payments.filter((p) => p.id !== id),
           }));
@@ -624,7 +629,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          const response = await fetch("/api/data/maintenance-issues", {
+          const response = await fetchWithCsrf("/api/data/maintenance-issues", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -642,7 +647,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          const response = await fetch("/api/data/maintenance-issues", {
+          const response = await fetchWithCsrf("/api/data/maintenance-issues", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id, ...data }),
@@ -664,7 +669,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          await fetch(`/api/data/maintenance-issues?id=${id}`, { method: "DELETE" });
+          await fetchWithCsrf(`/api/data/maintenance-issues?id=${id}`, { method: "DELETE" });
           set((state) => ({
             maintenanceIssues: state.maintenanceIssues.filter((i) => i.id !== id),
             maintenanceComments: state.maintenanceComments.filter((c) => c.issueId !== id),
@@ -694,7 +699,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          const response = await fetch("/api/data/maintenance-comments", {
+          const response = await fetchWithCsrf("/api/data/maintenance-comments", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ issueId, comment }),
@@ -720,7 +725,7 @@ export const useAppStore = create<AppStore>()(
         const { isAuthenticated } = get();
         
         if (isAuthenticated) {
-          await fetch(`/api/data/maintenance-comments?id=${id}`, { method: "DELETE" });
+          await fetchWithCsrf(`/api/data/maintenance-comments?id=${id}`, { method: "DELETE" });
           set((state) => ({
             maintenanceComments: state.maintenanceComments.filter((c) => c.id !== id),
           }));

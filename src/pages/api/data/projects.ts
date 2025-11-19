@@ -2,7 +2,7 @@
 import type { NextApiResponse } from "next";
 import { initAuth } from "../../../lib/authMiddleware";
 import { storage } from "../../../../server/storage";
-import { compose, requireAuth, requireRole, validateBody, withRateLimit } from "../../../../server/middleware";
+import { compose, requireCsrf, requireAuth, requireRole, validateBody, withRateLimit } from "../../../../server/middleware";
 import { AuthenticatedRequest } from "../../../../server/types";
 import { ProjectSchema } from "../../../../shared/validation";
 
@@ -40,6 +40,7 @@ export default async function handler(
     if (req.method === "POST") {
       return compose(
         withRateLimit({ windowMs: 60000, maxRequests: 30, routePattern: '/api/data/projects' }),
+        requireCsrf,
         requireAuth,
         requireRole("property_manager"),
         validateBody(ProjectSchema)

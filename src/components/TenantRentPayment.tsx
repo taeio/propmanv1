@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { getStripe } from "@/lib/stripe";
+import { fetchWithCsrf } from "@/lib/csrf";
 import { motion, AnimatePresence } from "framer-motion";
 import { DollarSign, X, CreditCard } from "lucide-react";
 
@@ -37,7 +38,7 @@ function PaymentForm({ amount, clientId, onSuccess, onCancel }: PaymentFormProps
         setErrorMessage(error.message || "Payment failed");
         setProcessing(false);
       } else if (paymentIntent && paymentIntent.status === "succeeded") {
-        const recordResponse = await fetch("/api/stripe/record-payment", {
+        const recordResponse = await fetchWithCsrf("/api/stripe/record-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -123,7 +124,7 @@ export default function TenantRentPayment({ clientId, rentAmount, onPaymentSucce
 
     setLoading(true);
     try {
-      const response = await fetch("/api/stripe/create-payment-intent", {
+      const response = await fetchWithCsrf("/api/stripe/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),

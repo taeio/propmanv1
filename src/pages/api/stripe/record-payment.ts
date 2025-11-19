@@ -2,7 +2,7 @@ import type { NextApiResponse } from "next";
 import Stripe from "stripe";
 import { initAuth } from "../../../lib/authMiddleware";
 import { storage } from "../../../../server/storage";
-import { compose, requireAuth, validateBody, withRateLimit } from "../../../../server/middleware";
+import { compose, requireCsrf, requireAuth, validateBody, withRateLimit } from "../../../../server/middleware";
 import { AuthenticatedRequest } from "../../../../server/types";
 import { StripeRecordPaymentSchema } from "../../../../shared/validation";
 
