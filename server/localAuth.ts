@@ -22,21 +22,31 @@ declare global {
 const PostgresSessionStore = connectPg(session);
 
 export function getSession() {
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret) {
+    throw new Error("SESSION_SECRET environment variable must be set");
+  }
+
   const sessionTtl = 7 * 24 * 60 * 60 * 1000;
+  const isProduction = process.env.NODE_ENV === "production";
+  
   return session({
+    name: 'propman.sid',
     store: new PostgresSessionStore({
       conString: process.env.DATABASE_URL,
       tableName: "sessions",
       ttl: sessionTtl / 1000,
     }),
-    secret: process.env.SESSION_SECRET || "propman-secret-key-change-in-production",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
+    proxy: isProduction,
     cookie: {
       maxAge: sessionTtl,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: "strict",
+      path: '/',
     },
   });
 }
