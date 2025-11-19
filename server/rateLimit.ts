@@ -1,23 +1,14 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { storage } from "./storage";
 
-interface RateLimitStore {
-  [key: string]: {
-    count: number;
-    resetTime: number;
-  };
-}
+const CLEANUP_INTERVAL = 5 * 60 * 1000; // Clean up old entries every 5 minutes
 
-const store: RateLimitStore = {};
-
-const CLEANUP_INTERVAL = 60000; // Clean up old entries every minute
-
-setInterval(() => {
-  const now = Date.now();
-  Object.keys(store).forEach(key => {
-    if (store[key].resetTime < now) {
-      delete store[key];
-    }
-  });
+setInterval(async () => {
+  try {
+    await storage.cleanupExpiredRateLimits();
+  } catch (error) {
+    console.error('[Rate Limit] Cleanup error:', error);
+  }
 }, CLEANUP_INTERVAL);
 
 export interface RateLimitConfig {
@@ -67,53 +58,41 @@ function normalizeRoute(url: string | undefined): string {
 
 export function rateLimit(config: RateLimitConfig) {
   return async (req: NextApiRequest, res: NextApiResponse, next: () => void | Promise<void>) => {
-    const identifier = getClientIdentifier(req);
-    const routePattern = config.routePattern || normalizeRoute(req.url);
-    const key = `${identifier}:${req.method}:${routePattern}`;
-    const now = Date.now();
+    try {
+      const identifier = getClientIdentifier(req);
+      const routePattern = config.routePattern || normalizeRoute(req.url);
+      const key = `${identifier}:${req.method}:${routePattern}`;
+      const now = Date.now();
+      const resetTime = new Date(now + config.windowMs);
 
-    if (!store[key]) {
-      store[key] = {
-        count: 1,
-        resetTime: now + config.windowMs,
-      };
-      res.setHeader('X-RateLimit-Limit', config.maxRequests.toString());
-      res.setHeader('X-RateLimit-Remaining', (config.maxRequests - 1).toString());
-      res.setHeader('X-RateLimit-Reset', store[key].resetTime.toString());
-      return next();
-    }
-
-    if (now > store[key].resetTime) {
-      store[key] = {
-        count: 1,
-        resetTime: now + config.windowMs,
-      };
-      res.setHeader('X-RateLimit-Limit', config.maxRequests.toString());
-      res.setHeader('X-RateLimit-Remaining', (config.maxRequests - 1).toString());
-      res.setHeader('X-RateLimit-Reset', store[key].resetTime.toString());
-      return next();
-    }
-
-    if (store[key].count >= config.maxRequests) {
-      const retryAfter = Math.ceil((store[key].resetTime - now) / 1000);
-      res.setHeader('Retry-After', retryAfter.toString());
-      res.setHeader('X-RateLimit-Limit', config.maxRequests.toString());
-      res.setHeader('X-RateLimit-Remaining', '0');
-      res.setHeader('X-RateLimit-Reset', store[key].resetTime.toString());
+      const count = await storage.incrementRateLimit(key, resetTime);
+      const limit = await storage.getRateLimit(key);
       
-      return res.status(429).json({
-        error: config.message || 'Too many requests, please try again later.',
-        retryAfter,
-      });
-    }
+      if (!limit) {
+        return next();
+      }
 
-    store[key].count++;
-    
-    res.setHeader('X-RateLimit-Limit', config.maxRequests.toString());
-    res.setHeader('X-RateLimit-Remaining', (config.maxRequests - store[key].count).toString());
-    res.setHeader('X-RateLimit-Reset', store[key].resetTime.toString());
-    
-    return next();
+      const resetTimeMs = limit.resetTime.getTime();
+      
+      res.setHeader('X-RateLimit-Limit', config.maxRequests.toString());
+      res.setHeader('X-RateLimit-Remaining', Math.max(0, config.maxRequests - count).toString());
+      res.setHeader('X-RateLimit-Reset', resetTimeMs.toString());
+
+      if (count > config.maxRequests) {
+        const retryAfter = Math.ceil((resetTimeMs - now) / 1000);
+        res.setHeader('Retry-After', retryAfter.toString());
+        
+        return res.status(429).json({
+          error: config.message || 'Too many requests, please try again later.',
+          retryAfter,
+        });
+      }
+
+      return next();
+    } catch (error) {
+      console.error('[Rate Limit] Error:', error);
+      return next();
+    }
   };
 }
 

@@ -151,6 +151,21 @@ export const maintenanceComments = pgTable(
   ]
 );
 
+// Rate Limits table (for distributed rate limiting)
+export const rateLimits = pgTable(
+  "rate_limits",
+  {
+    key: varchar("key").primaryKey(),
+    count: integer("count").notNull().default(0),
+    resetTime: timestamp("reset_time").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("IDX_rate_limits_reset_time").on(table.resetTime),
+  ]
+);
+
 // Type exports
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;

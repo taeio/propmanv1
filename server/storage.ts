@@ -8,6 +8,7 @@ import {
   payments,
   maintenanceIssues,
   maintenanceComments,
+  rateLimits,
   type User,
   type UpsertUser,
   type Client,
@@ -18,7 +19,7 @@ import {
   type MaintenanceComment,
 } from "../shared/schema";
 import { db } from "./db";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, lt, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -62,6 +63,10 @@ export interface IStorage {
   getMaintenanceComments(issueId: number, userId: string): Promise<MaintenanceComment[]>;
   createMaintenanceComment(comment: Omit<MaintenanceComment, 'id' | 'createdAt'>): Promise<MaintenanceComment>;
   deleteMaintenanceComment(id: number, userId: string): Promise<void>;
+  
+  getRateLimit(key: string): Promise<{ count: number; resetTime: Date } | undefined>;
+  incrementRateLimit(key: string, resetTime: Date): Promise<number>;
+  cleanupExpiredRateLimits(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -335,6 +340,61 @@ export class DatabaseStorage implements IStorage {
         await db.delete(maintenanceComments).where(eq(maintenanceComments.id, id));
       }
     }
+  }
+
+  async getRateLimit(key: string): Promise<{ count: number; resetTime: Date } | undefined> {
+    const [limit] = await db.select().from(rateLimits).where(eq(rateLimits.key, key));
+    if (!limit) return undefined;
+    return { count: limit.count, resetTime: limit.resetTime };
+  }
+
+  async incrementRateLimit(key: string, resetTime: Date): Promise<number> {
+    const now = new Date();
+    
+    const result = await db
+      .update(rateLimits)
+      .set({ 
+        count: sql`${rateLimits.count} + 1`,
+        updatedAt: now,
+      })
+      .where(and(
+        eq(rateLimits.key, key),
+        sql`${rateLimits.resetTime} > ${now}`
+      ))
+      .returning();
+    
+    if (result.length > 0) {
+      return result[0].count;
+    }
+    
+    const [upserted] = await db
+      .insert(rateLimits)
+      .values({
+        key,
+        count: 1,
+        resetTime,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: rateLimits.key,
+        set: {
+          count: sql`CASE 
+            WHEN ${rateLimits.resetTime} <= ${now} THEN 1 
+            ELSE ${rateLimits.count} + 1 
+          END`,
+          resetTime: sql`CASE 
+            WHEN ${rateLimits.resetTime} <= ${now} THEN ${resetTime}
+            ELSE ${rateLimits.resetTime}
+          END`,
+          updatedAt: now,
+        },
+      })
+      .returning();
+    return upserted.count;
+  }
+
+  async cleanupExpiredRateLimits(): Promise<void> {
+    await db.delete(rateLimits).where(lt(rateLimits.resetTime, new Date()));
   }
 }
 
